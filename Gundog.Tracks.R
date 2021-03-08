@@ -130,7 +130,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
   }
   
   if(is.null(cs) == FALSE | is.null(ch) == FALSE) {
-    cs = as.numeric(cs)           #If current variables provided, values placed in vectors
+    cs = as.numeric(cs) ; cs = ifelse(cs < 0, 0, cs) #If current variables provided, values placed in vectors (ensure surrent strength is not negative)
     ch = as.numeric(ch)           #If current variables provided, values placed in vectors 
     if(length(ch) == 1){ ch = rep(ch, length(h))} #If only one value supplied, replicate the length of other vectors used in the dead-reckoning process
     if(length(cs) == 1){ cs = rep(cs, length(h))} #If only one value supplied, replicate the length of other vectors used in the dead-reckoning process
@@ -248,7 +248,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
   if(Outgoing == TRUE) {
     
     TD = c(0, difftime(TS, lag(TS), units = "secs")[-1]) #Calculate frequency (Hz) of data (time difference (s) between rows)
-    s = (v * m) + c #Speed estimation using proportionality coefficient (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' 
+    s = (v * m) + c ; s = ifelse(s < 0, 0, s) #Speed estimation using proportionality coefficient (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' (cap at 0 in case intercept drives negative values) 
     q = (s * TD) / 6378137 #Speed estimation multiplied by time between rows for distance. q = Speed coefficient incorporating radius of earth (distance/R (R = approx. 6378137 m)) 
     if(is.null(p) == FALSE) { q = q * cos(p) } #If pitch supplied, multiply radial distance by pitch (assume direction of animal movement coincides with the direction of its longitudinal axis) 
     q = ifelse(ME == 0, 0, q) #If Marked events = 0, distance coefficient becomes 0 m (since animal deemed not moving)
@@ -352,7 +352,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     h.rev = h.rev - 180                  #Heading needs to be rotated 180 degrees for reverse dead-reckoning
     h.rev = ifelse(h.rev < 0, h.rev + 360, h.rev)             #heading is circular so need to ensure subtracting 180 does not result in negative numbers
     if(is.null(cs) == FALSE | is.null(ch) == FALSE) { ch.rev = ch.rev - 180 ; ch.rev = ifelse(ch.rev < 0, ch.rev + 360, ch.rev) } #Same applies if current heading supplied
-    s.rev = (v.rev * m.rev) + c.rev #Speed estimation using constant of proportionality (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' 
+    s.rev = (v.rev * m.rev) + c.rev ; s.rev = ifelse(s.rev < 0, 0, s.rev) #Speed estimation using proportionality coefficient (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' (cap at 0 in case intercept drives negative values) 
     q.rev = (s.rev * TD.rev) / 6378137 #Speed estimation multiplied by the time between rows for distance. q = distance coefficient incorporating radius of earth (distance/R (R = approx. 6378137 m)) 
     if(is.null(p) == FALSE) { q.rev = q.rev * cos(p.rev) } #If pitch supplied, multiply radial distance by pitch (assume direction of animal movement coincides with the direction of its longitudinal axis)   
     q.rev = ifelse(ME.rev == 0, 0, q.rev) #If Marked events = 0, distance coefficient becomes 0 m (since animal deemed not moving) 
