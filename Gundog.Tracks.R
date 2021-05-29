@@ -76,6 +76,7 @@
 
 #Warning: VPC too frequently (e.g., >= 0.2 Hz) will likely cause the dead-reckoned track to inherit locational errors of the VPs.
 #Warning: VPC too frequently may also result in infinity (Inf) correction values. (dividing a given distance obtained between VPs by a zero-distance obtained between aligned DR positions = Inf). 
+#Warning: Ensure the package 'inputeTS' is not required (detached) as this affects the functionality of 'na.locf' used within this script.
 #Possible other reasons why this could occur include wrongly assigned Marked events (ME) and speed coefficients (e.g., m value).
 #This function will recalculate the degree of VP under-sampling necessary to ensure this is not the case. 
 #This may, however, alter the method and threshold of VPC the user initially sets and may take additional time to resolve (dependent on the size of data set and regularity of Inf values).
