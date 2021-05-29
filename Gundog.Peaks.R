@@ -84,7 +84,6 @@ Gundog.Peaks = function(TS, x, thresh = 0, LoM = 5, constant = "med", ME = 1, pl
   df = data.frame(TS, index, x, pks, ME) #Place important variables within a data frame
   df = subset(df, df$pks == "TRUE") 
   df$Periodicity = c(difftime(df$TS[1], TS[1], units= "secs"), difftime(df$TS, lag(df$TS), units = "secs")[-1]) #Periodicity in seconds
-  df$Periodicity = ifelse(df$Periodicity > 1, NA, df$Periodicity)
   rm(constant, x.max, mini, SHT, ref, check, maxi, range_x, a, i.max, index, outlier, TD, ME) #Remove variables 
   df$pks= NULL #Remove this column
   colnames(df) = c("Timestamp", "Index" , "Peak.Amplitude", "Marked.events", "Peak.Period") ; df = df[, c(1:3, 5,4)] #Rename and reorder columns
