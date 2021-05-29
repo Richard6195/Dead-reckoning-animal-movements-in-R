@@ -74,9 +74,9 @@ df$VeDBA = sqrt((df$Acc_x - df$Acc_x.sm)^2 + (df$Acc_y - df$Acc_y.sm)^2 + (df$Ac
 df$VeDBA.sm = rollapply(df$VeDBA, width=80, FUN=mean, align="center", fill="extend")  
 
 #8) Do magnetic calibration and compute heading (see SI3 for details of the Gundog.Compass function and SI2 for details regarding the channel configuration (order of channel input)) - Note acc_x,y,z.sm and mag_x,y,z.sm are normalized within the function
-#Essentially, if tri-axial sphere is just offset (not much of an ellipsoid, then just use method = 1 or 8, method = 2 and 3 are for rotated ellipsoids and method = 4,5,6,7 are for non-rotated ellipsoids. Default = 3)
-#For penguin walking, DD is positioned vertical (x axis = heave dimension, pointing up, z axis = surge dimension pointing away from animal's back), so channel order is the following;
-df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, method = 1, plot=TRUE)
+#Essentially, if tri-axial sphere is just offset (not much of an ellipsoid, then use method = 1 or 8, method = 2 and 3 are for rotated ellipsoids and method = 4,5,6,7 are for non-rotated ellipsoids. Default = 3)
+#For penguin walking, DD is positioned vertical (x axis = heave dimension, pointing up, z axis = surge dimension pointing away from animal's back), so channel order is the following (here we assume no device offset relative to the body-carried NED frame, as parameterised with Euler angles);
+df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 1, plot=TRUE)
 
 #9) The important columns from df.corr are pitch roll and yaw, so merge back into df (see SI.3 for the other channel outputs)
 df = cbind(df, df.corr[, c('Pitch', 'Roll', 'Yaw')])
@@ -91,7 +91,7 @@ df.sub = subset(df, df$Total.Event.no. >= 1237489 & df$Total.Event.no. <= 145252
 penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = df.sub$VeDBA.sm, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1.5, c = 0, ME = df.sub$Marked.event, lo = -63.86774, la = -42.08654, VP.lon = df.sub$GPS.Longitude, VP.lat = df.sub$GPS.Latitude, VP.ME = TRUE, method = "distance", thresh = 12, dist.step = 5, bound = TRUE, Outgoing = TRUE, plot = TRUE)
 
 #Now just as an investigatory stage, lets redo the mag calibration procedure with method = 3, to see how much better (or worse) the track becomes (relative to VPs)
-df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, method = 3, plot=TRUE)
+df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 1, plot=TRUE)
 df[, c('Pitch', 'Roll', 'Yaw')] = df.corr[, c('Pitch', 'Roll', 'Yaw')] #Update these values with the new ones from recalculated df.corr
 df.sub = subset(df, df$Total.Event.no. >= 1237489 & df$Total.Event.no. <= 1452525) #Subset this updated df
 penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = df.sub$VeDBA.sm, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1.5, c = 0, ME = df.sub$Marked.event, lo = -63.86774, la = -42.08654, VP.lon = df.sub$GPS.Longitude, VP.lat = df.sub$GPS.Latitude, VP.ME = TRUE, method = "distance", thresh = 12, dist.step = 5, bound = TRUE, Outgoing = TRUE, plot = TRUE)
@@ -101,9 +101,11 @@ penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = df.sub$
 #10) Out of interest, with respect to the information and figure in SI2, to plot out the channel configuration period (to check you channel that the input order/required negations are correct), do the following....
 #Note, that for this calibration I held device horizontal, as if penguin was swimming (where horizontal is their predominant posture), so this procedure is actually irrelevant for the above track (when they were walking) as we need a different channel configuration in Gundog.Compass (which makes this check rather pointless, but anyway...)
 df = df[, -c(35:37)] # Remove the pitch, roll and yaw columns from previous step (step 9)
-df.corr = Gundog.Compass(mag.x = df$Mag_x.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_z.sm, acc.x = -df$Acc_x.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_z.sm, ME = df$Marked.event, method = 1, plot=TRUE) #This is the input for horizontal deployment (z-axis positing up from back and x-axis pointing towards the penguin's head)
+df.corr = Gundog.Compass(mag.x = df$Mag_x.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_z.sm, acc.x = -df$Acc_x.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_z.sm, ME = df$Marked.event, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 1, plot=TRUE) #This is the input for horizontal deployment (z-axis positing up from back and x-axis pointing towards the penguin's head)
 df = cbind(df, df.corr[, c('Pitch', 'Roll', 'Yaw')])
 df.sub = subset(df, df$Marked.event == 3) #This is to subset the channel configuration period - just the pitch up and down and roll left and right 3 times each at every anti-cardinal direction and finished by turning in a circle 3 times 
 plot(df.sub$Roll, type = "l", col = "green") ; lines(df.sub$Pitch, col = "red") #Note these pitch (red) and rolls (green) were carried out too quickly and so the 2-second smoothing to derive static acceleration has diluted the actual signal minima and maxima. Try redo this stage with the previous acceleration channel static smoothing of just 20 events instead of 80 (step 4) to see how plot changes... 
 #Use constant progression (speed) value
 penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = 1, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1, c = 0, ME = 1, lo = 0, la = 0, VP.lon = NULL, VP.lat = NULL, VP.ME = FALSE, method = NULL, thresh = 0, dist.step = 0, bound = TRUE, Outgoing = TRUE, plot = TRUE) #Notice here, there was a temporal gap between the pitches and rolls and the circling. Also note, slight variations about the z-axis (yaw) during pitch and rolls is the reason why the 'approx. square shape' contains some tortuosity  
+
+

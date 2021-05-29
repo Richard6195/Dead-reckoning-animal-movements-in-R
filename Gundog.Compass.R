@@ -1,4 +1,4 @@
-########################################Tilt compensated compass method with initial soft and hard iron distortion correction#############
+#######Tilt compensated compass method with initial soft and hard iron distortion correction and optional tag rotation correction#########
 ##########################################################################################################################################
 #+eval=FALSE 
 #Raw tri-axial magnetometer data (mag.x,y,z)
@@ -7,10 +7,11 @@
 #Marked events data (ME) specifying the period of the magnetic calibration period (as denoted by 'M' - any other input signifies data acquisition not part of calibration procedure). 
 #Up to 8 method variants of correction to choose from. For rotated ellipsoids use method = 2 (more influenced by noise or more spherical) or method = 3 (default)
 #For simple orthogonal re-scaling use method = 1. For non-rotated ellipsoids use method = 4, 5 (x & y axis equal), 6 (x & z axis equal), 7 (y & z axis are equal) or 8 (spherical data)
-#Outputs: #Normalised tri-axial static acceleration data (NGx,y,z).
+#The magnetic and gravity vectors are converted from the NED-carried device frame to the NED-carried animal's body frame via de-rotation according to the supplied Euler angles (see section 3 of the main paper for details)
+#Outputs: #Normalised tri-axial static acceleration data expressed in the animal's body frame (NGbx,y,z).
           #Calibrated tri-axial magnetometry data (Mx,y,z) 
-          #Calibrated, normalised tri-axial magnetometry data (NMx,y,z) 
-          #Calibrated, normalised tri-axial magnetometry data after tilt-correction (NMfx,y,z)
+          #Calibrated, normalised tri-axial magnetometry data expressed in the animal's body frame  (NMbx,y,z) 
+          #Calibrated, normalised tri-axial magnetometry data expressed in the animal's body frame, after tilt-correction (NMbfx,y,z)
           #Marked events (ME)
           #Pitch
           #Roll
@@ -19,7 +20,7 @@
 #Method = 1 based on mathematical protocols outlined by here ; https://github.com/kriswiner/MPU6050/wiki/Simple-and-Effective-Magnetometer-Calibration ; Winer (2017)
 #Method = 2 to 8 based on mathematical protocols outlined here; https://www.st.com/resource/en/design_tip/dm00286302-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf ; Vitali (2016)
 
-Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z, ME, method = 3, plot=TRUE){
+Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z, ME, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 3, plot=TRUE){
   
   #Ensure ME calibration period is denoted
   if(any(which(ME == "M")) == FALSE){ 
@@ -215,32 +216,61 @@ Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z, ME, method =
   df$NGy = df$acc.y / sqrt(df$acc.x^2 + df$acc.y^2 + df$acc.z^2) #Normalized
   df$NGz = df$acc.z / sqrt(df$acc.x^2 + df$acc.y^2 + df$acc.z^2) #Normalized
   
-  #Tilt compensated compass method using corrected mag readings
+  #If pitch, roll and/or yaw offsets are supplied, then de-rotate the normalized tag magnetic and gravity vectors to the animal body frame via:
+  if(roll.offset != 0 | pitch.offset != 0 | yaw.offset != 0) {
+    
+    df$RollSinAngle = sin(roll.offset * pi/180)                                                                                        
+    df$RollCosAngle = cos(roll.offset * pi/180)                                      
+    df$PitchSinAngle = sin(pitch.offset * pi/180)                                    
+    df$PitchCosAngle = cos(pitch.offset * pi/180)                                   
+    df$YawSinAngle = sin(yaw.offset * pi/180)                                                                                                     
+    df$YawCosAngle = cos(yaw.offset * pi/180)                                                                                                    
+    df$NGbx =  df$NGx * df$YawCosAngle * df$PitchCosAngle + df$NGy * (df$YawCosAngle * df$PitchSinAngle * df$RollSinAngle - df$YawSinAngle * df$RollCosAngle) + df$NGz * (df$YawCosAngle * df$PitchSinAngle * df$RollCosAngle + df$YawSinAngle * df$RollSinAngle)
+    df$NGby =  df$NGx * df$YawSinAngle * df$PitchCosAngle + df$NGy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NGz * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle - df$YawCosAngle * df$RollSinAngle)
+    df$NGbz =  -df$NGx * df$PitchSinAngle  +  df$NGy * df$PitchCosAngle * df$RollSinAngle +  df$NGz * df$PitchCosAngle * df$RollCosAngle
+    df$NMbx =  df$NMx * df$YawCosAngle * df$PitchCosAngle + df$NMy * (df$YawCosAngle * df$PitchSinAngle * df$RollSinAngle - df$YawSinAngle * df$RollCosAngle) + df$NMz * (df$YawCosAngle * df$PitchSinAngle * df$RollCosAngle + df$YawSinAngle * df$RollSinAngle)
+    df$NMby =  df$NMx * df$YawSinAngle * df$PitchCosAngle + df$NMy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NMz * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle - df$YawCosAngle * df$RollSinAngle)
+    df$NMbz =  -df$NMx * df$PitchSinAngle  +  df$NMy * df$PitchCosAngle * df$RollSinAngle +  df$NMz * df$PitchCosAngle * df$RollCosAngle
+    
+    df$RollSinAngle = NULL ; df$RollCosAngle = NULL
+    df$PitchSinAngle = NULL ; df$PitchCosAngle = NULL
+    df$YawSinAngle = NULL ; df$YawCosAngle = NULL
+    
+ }
   
+  if(roll.offset == 0 & pitch.offset == 0 & yaw.offset == 0) {
+    df$NGbx = df$NGx 
+    df$NGby = df$NGy 
+    df$NGbz = df$NGz 
+    df$NMbx = df$NMx 
+    df$NMby = df$NMy
+    df$NMbz = df$NMz 
+  }
+  
+  #Tilt compensated compass method using corrected mag readings
   #Calculate roll angle (-180deg, 180deg) and sin, cos
-  df$sign  = ifelse(df$NGz >= 0, 1, -1) # Value of 1 if Gz is non negative, or -1, if negative 
+  df$sign  = ifelse(df$NGbz >= 0, 1, -1) # Value of 1 if Gz is non negative, or -1, if negative 
   miu = 0.01 #Add a tiny fraction into the denominator to prevent it being zero
-  df$Roll  = atan2(df$NGy, df$sign*sqrt(df$NGz*df$NGz + miu*df$NGx*df$NGx))*180/pi
+  df$Roll  = atan2(df$NGby, df$sign*sqrt(df$NGbz*df$NGbz + miu*df$NGbx*df$NGbx))*180/pi
   df$RollSinAngle = sin(df$Roll * pi/180)
   df$RollCosAngle = cos(df$Roll * pi/180)
   #Calculate pitch angle Theta (-90deg, 90deg) and sin, cos
-  df$Pitch = atan2(-df$NGx, sqrt(df$NGy*df$NGy + df$NGz*df$NGz))*180/pi
+  df$Pitch = atan2(-df$NGbx, sqrt(df$NGby*df$NGby + df$NGbz*df$NGbz))*180/pi
   df$PitchSinAngle = sin(df$Pitch * pi/180)
   df$PitchCosAngle = cos(df$Pitch * pi/180)
   
   #De-rotate by pitch and roll
-  df$NMfx = df$Mx * df$PitchCosAngle + df$My * df$PitchSinAngle * df$RollSinAngle +  df$Mz * df$PitchSinAngle * df$RollCosAngle
-  df$NMfy = df$My * df$RollCosAngle - df$Mz * df$RollSinAngle  
-  df$NMfz = -df$Mx * df$PitchSinAngle + df$My * df$PitchCosAngle * df$RollSinAngle + df$Mz * df$PitchCosAngle * df$RollCosAngle
+  df$NMbfx =  df$NMbx * df$PitchCosAngle + df$NMby * df$PitchSinAngle * df$RollSinAngle + df$NMbz * df$PitchSinAngle * df$RollCosAngle
+  df$NMbfy = df$NMby * df$RollCosAngle  -  df$NMbz  * df$RollSinAngle 
+  df$NMbfz = -df$NMbx * df$PitchSinAngle + df$NMby * df$PitchCosAngle * df$RollSinAngle  + df$NMbz * df$PitchCosAngle * df$RollCosAngle 
   
   #Calculate yaw = -180deg, +180deg
-  df$Yaw = atan2(-df$NMfy, df$NMfx) * 180/pi
+  df$Yaw = atan2(-df$NMbfy, df$NMbfx) * 180/pi
   df$Yaw = ifelse(df$Yaw < 0, df$Yaw + 360, df$Yaw) #yaw = 0 deg to +360deg
 
-  df = df[, c(14:16, 8:13, 24:26, 7, 21, 18, 27)] #Reorder columns
+  df = df[, c(17:19, 8:10, 20:22, 30:32, 7, 27,24, 33)] #Reorder columns / remove uneccary inputs
   
   return(df)
   
 }
-
 

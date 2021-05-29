@@ -17,7 +17,7 @@
 #v = Input speed (m/s) or DBA metric of choice. E.g., VeDBA (Preferably smoothed by at least 1 or 2 seconds (arithmetic mean)).
 #elv = Elevation / depth data (m). If supplied, 3-D distance estimates will be output
 #p = Pitch - Only supply if user wants radial distance modulated according to pitch (q multiplied by cosine of pitch)
-#cs = Current strength (m/s). Supplied as a single value or vector/column of changeable values. NA's are replaced with the most recent non-NA prior to it (observations carried forward)
+#cs = Current speed (m/s). Supplied as a single value or vector/column of changeable values. NA's are replaced with the most recent non-NA prior to it (observations carried forward)
 #ch = Current heading degrees (0 to 360 degrees).  Supplied as a single value or vector/column of changeable values.  NA's are replaced with the most recent non-NA prior to it (observations carried forward)
 #m = Coefficient to multiply VeDBA by for speed estimate (e.g. The gradient (default = 1)). These can be changeable values (DBA~speed relationships according to movement modes) the length of other vector inputs (e.g., 'h') or a single value (one gradient used on all DBA values). 
 #c = Constant (e.g., The intercept (default = 0)). These can be changeable values (DBA~speed relationships according to movement modes) the length of other vector inputs (e.g. 'h') or a single value (one constant used on all DBA values).
@@ -98,7 +98,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
  
   if (!require('zoo')){ install.packages('zoo')} ; library('zoo') #Required packages
   if (!require('dplyr')){ install.packages('dplyr')} ; library('dplyr') #Required packages
-  if(plot == TRUE & Sys.info()["sysname"] == "Windows") { windows(width=10, height=8) } #Set graphics window if plot = TRUE (and operating system is windows)
+  if(plot == TRUE & Sys.info()["sysname"] == "Windows") { windows(width=12, height=10) } #Set graphics window if plot = TRUE (and operating system is windows)
   options(warn = -1) #Remove warnings()
   options(digits.secs = 3) #Specify the number of decimal places of the fractional seconds to show if relevant   
   is.POSIXct = function(x) inherits(x, "POSIXct") #Function to check variable is of POSIXct type
@@ -258,7 +258,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     #Dead-reckoning with current integration
     ####################################################################
     
-    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { #If current strength (cs) and current heading (ch) supplied, these vectors are added per dead-reckoned iteration
+    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { #If current speed (cs) and current heading (ch) supplied, these vectors are added per dead-reckoned iteration
       
       #2 equations for dead-reckoning latitude and longitude coordinates (no current integration yet)
       for(i in 2:length(DR.lat)){ 
@@ -300,7 +300,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       lo = 180 * lo/pi     #Convert back to grid coordinates
       
       df = data.frame(Row.number, TS, TD, h, v, q, ME, elv, cs, ch, DR.lon, DR.lat, h, q, drift.h, drift.q)  #Prepare main data frame called 'df' with initial dead-reckon track coordinates
-      colnames(df) = c("Row.number", "Timestamp", "DR.seconds", "Heading", "DBA.or.speed", "Radial.distance", "Marked.events", "Elevation", "Current.strength", "Current.heading", "DR.longitude", "DR.latitude", "h", "q", "Heading.current.integrated", "Radial.distance.current.integrated")
+      colnames(df) = c("Row.number", "Timestamp", "DR.seconds", "Heading", "DBA.or.speed", "Radial.distance", "Marked.events", "Elevation", "Current.speed", "Current.heading", "DR.longitude", "DR.latitude", "h", "q", "Heading.current.integrated", "Radial.distance.current.integrated")
       
       #Dead-reckoning with no current integration
       ####################################################################
@@ -335,17 +335,17 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     
     TD = c(0, (difftime(TS, lag(TS), units = "secs"))[-1]) #Calculate frequency (Hz) of data (time difference (s) between rows)
     df = data.frame(Row.number, TS, TD, h, v, ME, m, c, elv)   #Bind relevant vectors to reverse
-    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { df$cs = cs ; df$ch = ch } #Include current strength and heading if supplied
+    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { df$cs = cs ; df$ch = ch } #Include current speed and heading if supplied
     if(is.null(p) == FALSE) { df$p = p } #Include pitch if supplied 
     
     df = df[dim(df)[1]:1, ]              #Reverses df, so last row is first, second to last row is second etc...
     Row.number = df[, 'Row.number'] ; TS = df[, 'TS']; TD = df[, 'TD'] ; h = df[, 'h'] ; v = df[, 'v'] ; ME = df[, 'ME'] ; m = df[, 'm'] ; c = df[, 'c'] ; elv = df[, 'elv'] #Change the base vectors to the reversed df equivalents
-    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { cs = df[, 'cs'] ; ch = df[, 'ch'] } #Change the base vectors of current strength and heading if supplied
+    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { cs = df[, 'cs'] ; ch = df[, 'ch'] } #Change the base vectors of current speed and heading if supplied
     if(is.null(p) == FALSE) { p = df[, 'p'] } #Change the base vector of pitch if supplied 
      
     #This is required so DR function works in completely the opposite to normal way --> Shift values across by one 
     h.rev = c(NA, h[-length(h)]) ; ME.rev = c(NA, ME[-length(ME)]) ;  v.rev = c(NA, v[-length(v)]) ; TD.rev = c(NA, TD[-length(TD)]) ; m.rev = c(NA, m[-length(m)]) ; c.rev = c(NA, c[-length(c)])
-    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { cs.rev = c(NA, cs[-length(cs)]) ; ch.rev = c(NA, ch[-length(ch)]) } #Same applies if current strength and heading supplied
+    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { cs.rev = c(NA, cs[-length(cs)]) ; ch.rev = c(NA, ch[-length(ch)]) } #Same applies if current speed and heading supplied
     if(is.null(p) == FALSE) { p.rev = c(NA, p[-length(p)]) } ##Same applies if pitch supplied
     
     #reverse DR equivalent vectors
@@ -362,7 +362,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     #Reverse dead-reckoning with current integration
     ####################################################################
     
-    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { #If current strength and heading supplied, these vectors are added per dead-reckoned iteration
+    if(is.null(cs) == FALSE | is.null(ch) == FALSE) { #If current speed and heading supplied, these vectors are added per dead-reckoned iteration
        
       #2 equations for dead-reckoning latitude and longitude coordinates (no current integration yet)
       for(i in 2:length(DR.lat)){ 
@@ -403,7 +403,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       df = data.frame(Row.number, TS, TD, h, v, q.rev, ME, elv, cs, ch, DR.lon, DR.lat, h.rev, q.rev, drift.h, drift.q)  #Prepare main data frame called 'df' with initial dead-reckon track coordinates
       df = df[dim(df)[1]:1,] #Change df dimensions back to original
-      colnames(df) = c("Row.number", "Timestamp", "DR.seconds", "Heading", "DBA.or.speed", "Radial.distance", "Marked.events", "Elevation", "Current.strength", "Current.heading", "DR.longitude", "DR.latitude", "h", "q", "Heading.current.integrated", "Radial.distance.current.integrated")
+      colnames(df) = c("Row.number", "Timestamp", "DR.seconds", "Heading", "DBA.or.speed", "Radial.distance", "Marked.events", "Elevation", "Current.speed", "Current.heading", "DR.longitude", "DR.latitude", "h", "q", "Heading.current.integrated", "Radial.distance.current.integrated")
       
       #Reverse dead-reckoning with no current integration
       ####################################################################
@@ -521,7 +521,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       if(max(abs(diff(df$Elevation))) > 0) { #Elevation/depth data supplied
         
-        df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Elevation", "Elevation.diff", "Current.strength", 
+        df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Elevation", "Elevation.diff", "Current.speed", 
                   "Current.heading", "Heading.current.integrated", "Radial.distance.current.integrated", "DR.longitude", "DR.latitude", "DR.distance.2D",
                   "DR.distance.3D", "DR.cumulative.distance.2D", "DR.cumulative.distance.3D", "DR.straightline.distance.from.start.2D", 
                   "DR.straightline.distance.from.start.3D", "DR.speed.2D", "DR.speed.3D")]
@@ -531,7 +531,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       df$Elevation = NULL #Remove elevation/depth data if none supplied
       
-      df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Current.strength", 
+      df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Current.speed", 
                 "Current.heading", "Heading.current.integrated", "Radial.distance.current.integrated", "DR.longitude", "DR.latitude", 
                 "DR.distance.2D", "DR.cumulative.distance.2D", "DR.straightline.distance.from.start.2D", "DR.speed.2D")]
       }
@@ -1238,11 +1238,11 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       ###########################################################################################################
       
       z = round(max(df$DR.cumulative.distance.2D, na.rm = TRUE))
-
-      if(max(abs(df$Elevation - df$Elevation)) > 0) { 
+      
+      if(max(abs(diff(df$Elevation))) > 0)  { 
         y = round(max(df$DR.cumulative.distance.3D, na.rm = TRUE))
         plot(df$DR.longitude.corr, df$DR.latitude.corr, type = "l", col = "blue", main = paste("VPC DR track"), xlab = "Longitude", ylab = "Latitude",
-             sub = paste("Accumulated 2D DR distance =", y, "m.", "Accumulated 3D DR distance =", y, "m"))
+             sub = paste("Accumulated 2D DR distance =", z, "m.", "Accumulated 3D DR distance =", y, "m"))
       } else { plot(df$DR.longitude.corr, df$DR.latitude.corr, type = "l", col = "blue", main = paste("VPC DR track"), xlab = "Longitude", ylab = "Latitude",
                    sub = paste("Accumulated 2D DR distance =", z, "m")) }
       
@@ -1286,7 +1286,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       if(max(abs(diff(df$Elevation))) > 0) { #Elevation/depth data supplied
         
-        df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Elevation", "Elevation.diff", "Current.strength", 
+        df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Elevation", "Elevation.diff", "Current.speed", 
                   "Current.heading", "Heading.current.integrated", "Radial.distance.current.integrated", "DR.longitude", "DR.latitude", "DR.longitude.corr", 
                   "DR.latitude.corr", "Dist.corr.factor", "Head.corr.factor", "Heading.corr", "Radial.distance.corr", "Distance.error.before.correction",
                   "Distance.error.after.correction", "DR.distance.2D", "DR.distance.3D", "DR.cumulative.distance.2D", "DR.cumulative.distance.3D", 
@@ -1299,7 +1299,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       df$Elevation = NULL #Remove elevation/depth data if none supplied
       
-      df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Current.strength", 
+      df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Current.speed", 
                 "Current.heading", "Heading.current.integrated", "Radial.distance.current.integrated", "DR.longitude", "DR.latitude", 
                 "DR.longitude.corr", "DR.latitude.corr", "Dist.corr.factor", "Head.corr.factor", "Heading.corr", "Radial.distance.corr", 
                 "Distance.error.before.correction", "Distance.error.after.correction", "DR.distance.2D", "DR.cumulative.distance.2D", 
@@ -1330,7 +1330,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
 #For example:
 #a = Gundog.Tracks(TS = df$timestamp, h = df$Mag.heading.smoothed, v = df$VeDBA.smoothed, m = df$coefficient, c = 0, ME = df$Walking, lo = head(df$VP.longitude[df$VP.longitude!=0], 1), la = head(df$VP.latitude[df$VP.latitude!=0], 1), VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, thresh = 60, method = "time", Outgoing = TRUE, bound = TRUE, plot= TRUE)
 #b = Gundog.Tracks(TS = df$timestamp, h = df$Mag.heading.smoothed, v = df$VeDBA.smoothed, m = 1.5, c = 0, ME = 1, lo = -63.86662, la = -42.08646, VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, thresh=10, method="distance", Outgoing = FALSE, bound = FALSE, DBA = FALSE, plot= FALSE)
-#c = Gundog.Tracks(TS = df$Timestamp, h = df$Mag.heading.smoothed, v = df$Speed, elv = df$Depth, cs = df$Current.strength, ch = df$Current.heading, m = 1, c = 0, ME = df$Marked.events, lo = tail(df$VP.longitude[df$VP.longitude!=0], 1), la = tail(df$VP.latitude[df$VP.latitude!=0], 1), VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, method="all", thresh = 1, Outgoing = FALSE, bound = FALSE, plot = TRUE)
+#c = Gundog.Tracks(TS = df$Timestamp, h = df$Mag.heading.smoothed, v = df$Speed, elv = df$Depth, cs = df$Current.speed, ch = df$Current.heading, m = 1, c = 0, ME = df$Marked.events, lo = tail(df$VP.longitude[df$VP.longitude!=0], 1), la = tail(df$VP.latitude[df$VP.latitude!=0], 1), VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, method="all", thresh = 1, Outgoing = FALSE, bound = FALSE, plot = TRUE)
 ##############################################################################################################################################################
 #Order of data frame output if VPC is initialized, (*Present according to input)
 ##############################################################################################################################################################
@@ -1344,7 +1344,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
 # 8) Radial.distance --> (The calculated q coefficient (prior to VPC factors)
 # 9) *Elevation --> (Original)
 # 10) *Elevation.diff --> (Rate change of supplied elevation/depth (m/s)) 
-# 11) *Current.strength --> (Original)
+# 11) *Current.speed --> (Original)
 # 12) *Current.heading --> (Original)
 # 13) *Heading.current.integrated --> (Updated heading following addition of current vectors (prior to VPC))
 # 14) *Radial.distance.current.integrated --> (Updated q coefficient following addition of current vectors (prior to VPC))
