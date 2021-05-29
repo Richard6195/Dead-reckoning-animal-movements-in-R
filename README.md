@@ -9,6 +9,6 @@ R functions to dead-reckon reckon animal movement from raw motion sensor data (s
 
 #Step by step guide of using Gundog.Tracks (incl. Gundog.Compass operations) - to use in conjunction with supplied raw data of a penguin walking to the sea.
 
-#Additional R script containing various operations and functions for assessing estimates of fine-scale movements 
+#Additional R script containing various operations and functions for assessing estimates of fine-scale movements.
 	
 
