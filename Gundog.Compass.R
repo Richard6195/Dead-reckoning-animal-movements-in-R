@@ -3,11 +3,11 @@
 #+eval=FALSE 
 #Raw tri-axial magnetometer data (mag.x,y,z)
 #Tri-axial static acceleration data (acc.x,y,z) (for computation of pitch and roll)
-#Input assumes North-East-Down (NED) coordinate system (measures + 1 g when pointing down) - Assume the x, y and z input fields for both magnetometry and accelerometery data represents the surge (forward-backward), sway (side-to-side) heave (up-down) dimensions of movement, respectively, which the user allocates the appropriate channel and/or required negation to (dependent on the local coordinate frame of the device used). 
+#Input assumes North-East-Down (NED) coordinate system (measures + 1 g when pointing directly down) - Assume the x, y and z input fields for both magnetometry and accelerometery data represent the surge (forward-backward), sway (side-to-side) heave (up-down) dimensions of movement, respectively, which the user allocates the appropriate channel and/or required negation to (dependent on the local coordinate frame of the device used). 
 #Marked events data (ME) specifying the period of the magnetic calibration period (as denoted by 'M' - any other input signifies data acquisition not part of calibration procedure). 
 #Up to 8 method variants of correction to choose from. For rotated ellipsoids use method = 2 (more influenced by noise or more spherical) or method = 3 (default)
 #For simple orthogonal re-scaling use method = 1. For non-rotated ellipsoids use method = 4, 5 (x & y axis equal), 6 (x & z axis equal), 7 (y & z axis are equal) or 8 (spherical data)
-#The magnetic and gravity vectors are converted from the NED-carried device frame to the NED-carried animal's body frame via de-rotation according to the supplied Euler angles (see section 3 of the main paper for details)
+#The magnetic and gravity vectors are converted from the NED-carried device frame to the NED-carried animal's body frame via de-rotation according to the supplied Euler angles (pitch, roll and yaw; see section 3 of the main paper for details). Default assumes no offset
 #Outputs: #Normalised tri-axial static acceleration data expressed in the animal's body frame (NGbx,y,z).
           #Calibrated tri-axial magnetometry data (Mx,y,z) 
           #Calibrated, normalised tri-axial magnetometry data expressed in the animal's body frame  (NMbx,y,z) 
