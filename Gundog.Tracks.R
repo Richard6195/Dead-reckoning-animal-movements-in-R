@@ -535,7 +535,11 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       df = df[c("Row.number", "Timestamp", "DR.seconds", "Heading", "Marked.events", "DBA.or.speed", "Radial.distance", "Current.speed", 
                 "Current.heading", "Heading.current.integrated", "Radial.distance.current.integrated", "DR.longitude", "DR.latitude", 
                 "DR.distance.2D", "DR.cumulative.distance.2D", "DR.straightline.distance.from.start.2D", "DR.speed.2D")]
-      }
+    }
+      
+      if(Outgoing == FALSE) {
+          df$Heading.current.integrated = df$Heading.current.integrated + 180 ; df$Heading.current.integrated = ifelse(df$Heading.current.integrated > 360, df$Heading.current.integrated - 360, df$Heading.current.integrated) #Revert the current integrated heading (pre-correction) (currently 180 degrees out)
+        }
     }
     
     #If pitch supplied, incorporate (degree format) into data frame after 'DBA.or.speed' column

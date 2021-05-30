@@ -19,13 +19,111 @@ colnames(df)[colnames(df)=="long.Z.m"] <- "Distance E-W (m)" #Rename these colum
 colnames(df)[colnames(df)=="lat.Z.m"] <- "Distance N-S (m)"
 
 
-
 #(2)
-#Function to calulate rolling (2-D) tortuosity values every 'x' seconds (based on time)
+#Compute distance in 2- or 3-D
+#disty function 
+disty = function(long1, lat1, elv1 = 0, long2, lat2, elv2 = 0, method = "Haversine") { #longitude and latitude supplied in degrees, elevation/depth supplied in meters
+  #Calculates either: #1) Haversine distance between coordinates (great circular distance 'as the crow flies') -- > output = "Haversine"
+  #2) straight-line distance between sets of Cartesian coordinates (x,y,z), incorporating change in vertical axis (elv - depth/elevation) --> output = "SLD"
+  #3) Modulation of both (Haversine when no change in vertical axis between coordinates and SLD when there is) --> output = "Hav.SLD"
+  #Default assumes no elevation data 
+  if(length(elv1) == 1){ elv1 = rep(elv1, length(long1)) } ; if(length(elv2) == 1){ elv2 = rep(elv2, length(long1)) }
+  #Great circular distance between 2D positions (Haversine)
+  long1 = long1 * pi/180 ; long2 = long2 * pi/180 ; lat1 = lat1 * pi/180 ; lat2 = lat2 * pi/180 #Function converts to radians
+  a = sin((lat2 - lat1) / 2) * sin((lat2 - lat1) / 2) + cos(lat1) * cos(lat2) * sin((long2 - long1) / 2) * sin((long2 - long1) / 2)
+  c = 2 * atan2(sqrt(a), sqrt(1 - a))
+  d1 = 6378137 * c
+  #Convert lat (degrees), long (degrees), elv (meters) to Cartesian x, y, z coordinates incorporating Earth's oblate spheroid
+  #Geodetic latitude is format given by VP  --> Conversion to Geocentric latitude =-> angle measured from Earth's center between a point and the equator
+  maj.a = 6378137 #Equatorial radius in meters (semi-major axis)
+  min.a = 6356752.314245 #Polar radius in meters  (semi-minor axis)
+  e2 = 1 - (min.a^2 / maj.a^2)
+  #Distance from the center of the Earth to a given point on its surface --> As a function of geodetic latitude         
+  x1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * cos(long1) * cos(atan((1 - e2) * tan(lat1)))
+  x2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * cos(long2) * cos(atan((1 - e2) * tan(lat2)))
+  y1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * sin(long1) * cos(atan((1 - e2) * tan(lat1)))
+  y2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * sin(long2) * cos(atan((1 - e2) * tan(lat2)))
+  z1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * sin(atan((1 - e2) * tan(lat1)))
+  z2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * sin(atan((1 - e2) * tan(lat2)))
+  #Use geodetic latitude to calculate normal vector from the surface -- > incorporating elevation
+  x1 = x1 + elv1 * cos(lat1) * cos(long1)
+  x2 = x2 + elv2 * cos(lat2) * cos(long2)
+  y1 = y1 + elv1 * cos(lat1) * sin(long1)
+  y2 = y2 + elv2 * cos(lat2) * sin(long2)
+  z1 = z1 + elv1 * sin(lat1)
+  z2 = z2 + elv2 * sin(lat2)
+  #Euclidean straight-line distance between sets of Cartesian coordinates
+  d2 = sqrt((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)
+  
+  #Haversine
+  if(method == "Haversine"){
+    distance = d1
+  }
+  #Just SLD
+  if(method == "SLD"){
+    distance = d2
+  }
+  #Modulation of Haversine and SLD
+  if(method == "Hav.SLD"){
+    distance = ifelse(elv1 - elv2 == 0, d1, d2)
+  }
+  return(distance)
+}
+
+#Now compute distance using a given stepping interval between Verified Positions (VPs)
+dist.step = 5 #stepping interval of 5 fixes
+VP.loni = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) ; VP.lati = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) #Shift vector values forward  by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length as original)
+VP.distance = disty(VP.longitude, VP.latitude, 0, VP.loni, VP.lati, 0)      #Calculate row wise 2-D (Haversine) distance between successive VP coordinates
+VP.distance = c(rep(NA, dist.step), VP.distance[c(1:(length(VP.distance)-dist.step))]) #Shift values back by by the specified stepping range
+VP.distance = ifelse(is.na(VP.distance == TRUE), 0, VP.distance)  #Replace NA's with 0's
+VP.distance = cumsum(VP.distance) #Calculate cumulative distance between VPs
+
+
+#(3)
+#Compute bearing (heading) between sets of coords
+#Bearing function --> returns degrees - Great circular bearing between 2D positions (assumes time-matched VP and dead-reckoned fixes share the same elevation/depth)
+beary = function(long1, lat1, long2, lat2) { #Assumes units supplied as degrees
+  long1 = long1 * pi/180 ; long2 = long2 * pi/180 ; lat1 = lat1 * pi/180 ; lat2 = lat2 * pi/180 #Function converts to radians
+  a = sin(long2 - long1) * cos(lat2)
+  b = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(long2 - long1)
+  c = ((atan2(a, b) / pi) * 180)  #Units returned in degrees (-180 to +180 degree scale)
+  return(c)
+}
+
+
+
+#(4)
+#Counting occurrence and re-occurrence or a given variable
+#Uninterrupted 'Step' occurrence (accumulates the number of rows a given variable remains unchanged)
+df$Behaviour.duration<-sequence(rle(df$Behaviour)$lengths) #Count uninterrupted sequence of the variable 'Behaviour'
+#Unique incremental increase per re-occurrence of a 'Behaviour'
+y1<- rle(df$Behaviour)$values
+y2<- rle(df$Behaviour)$lengths
+z<-c()
+for(i in unique(y1)){
+  z[y1 == i]<-1:sum(y1 == i)
+}
+df$Behaviour.occurrence<-rep(z,y2) 
+df$Behaviour.Group <- paste(df$Behaviour, df$Behaviour.occurrence)
+#Proportion of time of dataset
+x<-as.numeric(df$Total.Event.no.)
+rescale <- function(x) (x-min(x))/(max(x) - min(x))
+df$Prop.of.total.time<-rescale(x)
+#Proportion of time per behaviour occurrence
+df <- df  %>%
+  group_by(Behaviour.Group) %>%
+  mutate(prop_of_time_per_behaviour = rescale(Behaviour.duration) )
+#Sequential row numbers
+df$Observation <- 1:nrow(df) 
+
+
+
+#(5)
+#Function to calulate rolling (2-D) tortuosity values every 's' time period (based on time)
 #Tortuoisty is calculated by dividing the straight-line distance (SLD), that is the two-dimensional Euclidean distance between the initial fix and the end fix of the path, by the sum of the consecutive individual distance steps (SDS) between fix1, fix2,..., fixn that constituted the total path length
-#x = supplied longitude values
+#x = supplied longitude values 
 #y = supplied latitude values
-#s = supplied  time theshold - tortosity calulated over 's' seconds e.g., s = 10 = tortuosity calultated over 10 s intervals
+#s = supplied  time threshold, e.g., s = 10 = tortuosity calculated over 10 event intervals
 library(zoo)
 Gundog.Tortuosity <- function(x, y, s){
   w<-round(s/2)
@@ -48,13 +146,13 @@ Gundog.Tortuosity <- function(x, y, s){
 
 
 
-#(3)
+#(6)
 #Function to calculate a tortuosity value over every 'x' metres moved. This makeshift function iterates per supplied group (e.g., individual)
 #Tortuoisty is calculated by dividing the straight-line distance (SLD), that is the two-dimensional Euclidean distance between the initial fix and the end fix of the path, by the sum of the consecutive individual distance steps (SDS) between fix1, fix2,..., fixn that constituted the total path length
 #x = supplied longitude values
 #y = supplied latitude values
 #d = supplied distance values (distance travelled between fixes, e.g., computed with Haversine formula). Note, do not supply accumulated distance
-#thresh = Tortosity calculated every 'thresh' cumulated distance moved. E.g., thresh = 10 - one tort value per 10 m moved
+#thresh = Tortuosity calculated every 'thresh' accumulated distance moved. E.g., thresh = 10 - one tort value per 10 m moved
 #Group = Secondary grouping function. E.g., If wanting to separate results for multiple individuals / habitat types etc.
 library(plyr) ; library(zoo)
 Gundog.Tortuosity.2 <- function(x, y, d, thresh, Group){   
@@ -138,7 +236,7 @@ Gundog.Tortuosity.2 <- function(x, y, d, thresh, Group){
 
 
 
-#(4)
+#(7)
 #Calculate the shortest horizontal (Haversine) distance between an animals track and a given line transect (assuming they are vertically in alignment per unit time (quicker alternative to Dist2line from 'geosphere' package)
 library(DescTools) ; library(geosphere) ; library(dplyr) ; library(imputeTS) ; library(geosphere)
 #First lets make up a line transect by linearly interpolating between an animal's starting position and finishing position
@@ -154,7 +252,7 @@ df$TOF.lat = na.interpolation(df$TOF.lat, option = "linear", maxgap = Inf) #Line
 DR.latitude.corr = df$DR.latitude.corr ; TOF.lat = df$TOF.lat
 x = rep(NA, length(DR.latitude.corr))
 for(i in 1:length(DR.latitude.corr)){
-  x[i] = Closest(TOF.lat, DR.latitude.corr[i], which = TRUE, na.rm = FALSE)
+  x[i] = Closest(TOF.lat, DR.latitude.corr[i], which = TRUE, na.rm = FALSE) #This finds the closest latitude values between VP track and line transect (to align in vertical space before calculating horizontal displacement)
 }
 df$TOF.lat.time.corr = x
 df$TOF.lat.time.corr = df$TOF.lat[df$TOF.lat.time.corr]
@@ -164,11 +262,11 @@ df<- df %>% rowwise() %>% mutate(ToF = distHaversine(c(DR.longitude.corr, DR.lat
 
 
 
-#(5)
+#(8)
 #Grid up maps/tracks into approx 10 by 10 m and compute summary stats per grid
 #Now lets grid up map and create density plots 
 library(ggplot2) ; library(viridis)
-#First grid up map
+#First grid up map                            #Can change to different grid size 
 ji <- function(xy, origin=c(0,0), cellsize=c(0.0001,0.0001)) {
   t(apply(xy, 1, function(z) cellsize/2+origin+cellsize*(floor((z - origin)/cellsize))))
 }
@@ -177,7 +275,7 @@ df$gridded.X <- JI[, 1]
 df$gridded.Y <- JI[, 2]
 df$Grid.cell <- paste(df$gridded.X, df$gridded.Y)
 #Create gridded plots
-grid.summaries <- df %>%group_by(Grid.cell, ) %>% summarise_at(vars("DR.Speed", "AVeY"), mean, na.rm =T) #Compute mean per grid.cell, for veriables termed 'Dr.Speed' and 'AVeY'
+grid.summaries <- df %>%group_by(Grid.cell, ) %>% summarise_at(vars("DR.Speed", "AVeY"), mean, na.rm =T) #Compute mean per grid.cell, for variables termed 'Dr.Speed' and 'AVeY'
 grid.summaries <- data.frame(cbind(do.call('rbind', strsplit(as.character(grid.summaries$Grid.cell),' ',fixed=TRUE)), v[, 2:3])) #Separate gridded coords
 colnames(grid.summaries)<-c("Longitude", "Latitude" ,"Speed", "AVeY") #rename
 grid.summaries$Longitude<-as.numeric(as.character(grid.summaries$Longitude)) #Ensure all columns are numeric class
@@ -200,103 +298,6 @@ grid.summaries$Longitude<-as.numeric(as.character(grid.summaries$Longitude)) #En
 grid.summaries$Latitude<-as.numeric(as.character(grid.summaries$Latitude))
 
 
-#(6)
-#Compute distance in 2- or 3-D
-#disty function 
-disty = function(long1, lat1, elv1 = 0, long2, lat2, elv2 = 0, method = "Haversine") { #longitude and latitude supplied in degrees, elevation/depth supplied in meters
-  #Calculates either: #1) Haversine distance between coordinates (great circular distance 'as the crow flies') -- > output = "Haversine"
-  #2) straight-line distance between sets of Cartesian coordinates (x,y,z), incorporating change in vertical axis (elv - depth/elevation) --> output = "SLD"
-  #3) Modulation of both (Haversine when no change in vertical axis between coordinates and SLD when there is) --> output = "Hav.SLD"
-  #Default assumes no elevation data 
-  if(length(elv1) == 1){ elv1 = rep(elv1, length(long1)) } ; if(length(elv2) == 1){ elv2 = rep(elv2, length(long1)) }
-  #Great circular distance between 2D positions (Haversine)
-  long1 = long1 * pi/180 ; long2 = long2 * pi/180 ; lat1 = lat1 * pi/180 ; lat2 = lat2 * pi/180 #Function converts to radians
-  a = sin((lat2 - lat1) / 2) * sin((lat2 - lat1) / 2) + cos(lat1) * cos(lat2) * sin((long2 - long1) / 2) * sin((long2 - long1) / 2)
-  c = 2 * atan2(sqrt(a), sqrt(1 - a))
-  d1 = 6378137 * c
-  #Convert lat (degrees), long (degrees), elv (meters) to Cartesian x, y, z coordinates incorporating Earth's oblate spheroid
-  #Geodetic latitude is format given by VP  --> Conversion to Geocentric latitude =-> angle measured from Earth's center between a point and the equator
-  maj.a = 6378137 #Equatorial radius in meters (semi-major axis)
-  min.a = 6356752.314245 #Polar radius in meters  (semi-minor axis)
-  e2 = 1 - (min.a^2 / maj.a^2)
-  #Distance from the center of the Earth to a given point on its surface --> As a function of geodetic latitude         
-  x1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * cos(long1) * cos(atan((1 - e2) * tan(lat1)))
-  x2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * cos(long2) * cos(atan((1 - e2) * tan(lat2)))
-  y1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * sin(long1) * cos(atan((1 - e2) * tan(lat1)))
-  y2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * sin(long2) * cos(atan((1 - e2) * tan(lat2)))
-  z1 = sqrt(((maj.a * maj.a * cos(lat1))^2 + (min.a * min.a * sin(lat1))^2) / ((maj.a * cos(lat1))^2 + (min.a * sin(lat1))^2)) * sin(atan((1 - e2) * tan(lat1)))
-  z2 = sqrt(((maj.a * maj.a * cos(lat2))^2 + (min.a * min.a * sin(lat2))^2) / ((maj.a * cos(lat2))^2 + (min.a * sin(lat2))^2)) * sin(atan((1 - e2) * tan(lat2)))
-  #Use geodetic latitude to calculate normal vector from the surface -- > incorporating elevation
-  x1 = x1 + elv1 * cos(lat1) * cos(long1)
-  x2 = x2 + elv2 * cos(lat2) * cos(long2)
-  y1 = y1 + elv1 * cos(lat1) * sin(long1)
-  y2 = y2 + elv2 * cos(lat2) * sin(long2)
-  z1 = z1 + elv1 * sin(lat1)
-  z2 = z2 + elv2 * sin(lat2)
-  #Euclidean straight-line distance between sets of Cartesian coordinates
-  d2 = sqrt((x1 - x2)^2 + (y1 - y2)^2 + (z1 - z2)^2)
-  
-  #Haversine
-  if(method == "Haversine"){
-    distance = d1
-  }
-  #Just SLD
-  if(method == "SLD"){
-    distance = d2
-  }
-  #Modulation of Haversine and SLD
-  if(method == "Hav.SLD"){
-    distance = ifelse(elv1 - elv2 == 0, d1, d2)
-  }
-  return(distance)
-}
-
-
-#Now compute distance using a given stepping interval between Verified Positions (VPs)
-dist.step = 5 #stepping interval of 5 fixes
-VP.loni = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) ; VP.lati = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) #Shift vector values forward  by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length as original)
-VP.distance = disty(VP.longitude, VP.latitude, 0, VP.loni, VP.lati, 0)      #Calculate row wise 2-D (Haversine) distance between successive VP coordinates
-VP.distance = c(rep(NA, dist.step), VP.distance[c(1:(length(VP.distance)-dist.step))]) #Shift values back by by the specified stepping range
-VP.distance = ifelse(is.na(VP.distance == TRUE), 0, VP.distance)  #Replace NA's with 0's
-VP.distance = cumsum(VP.distance) #Calculate cumulative distance between VPs
-
-#(7)
-#Compute bearing (heading) between sets of coords
-#Bearing function --> returns degrees - Great circular bearing between 2D positions (assumes time-matched VP and dead-reckoned fixes share the same elevation/depth)
-beary = function(long1, lat1, long2, lat2) { #Assumes units supplied as degrees
-  long1 = long1 * pi/180 ; long2 = long2 * pi/180 ; lat1 = lat1 * pi/180 ; lat2 = lat2 * pi/180 #Function converts to radians
-  a = sin(long2 - long1) * cos(lat2)
-  b = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(long2 - long1)
-  c = ((atan2(a, b) / pi) * 180)  #Units returned in degrees (-180 to +180 degree scale)
-  return(c)
-}
-
-(8)
-
-
-#(8)
-#Counting occurrence and re-occurrence or a given variable
-#Uninterrupted 'Step' occurrence (accumulates the number of rows a given variable remains unchanged)
-df$Behaviour.duration<-sequence(rle(df$Behaviour)$lengths) #Count uninterrupted sequence of the variable 'Behaviour'
-#Unique incremental increase per re-occurrence of a 'Behaviour'
-y1<- rle(df$Behaviour)$values
-y2<- rle(df$Behaviour)$lengths
-z<-c()
-for(i in unique(y1)){
-  z[y1 == i]<-1:sum(y1 == i)
-}
-df$Behaviour.occurrence<-rep(z,y2) 
-df$Behaviour.Group <- paste(df$Behaviour, df$Behaviour.occurrence)
-#Proportion of time of dataset
-x<-as.numeric(df$Total.Event.no.)
-rescale <- function(x) (x-min(x))/(max(x) - min(x))
-df$Prop.of.total.time<-rescale(x)
-#Proportion of time per behaviour occurrence
-df <- df  %>%
-  group_by(Behaviour.Group) %>%
-  mutate(prop_of_time_per_behaviour = rescale(Behaviour.duration) )
-#Sequential row numbers
-df$Observation <- 1:nrow(df) 
 
 #(9)
 #Calculate when a VP is within a pre-set up polygon
@@ -344,8 +345,8 @@ CuHe <- function(x, group){
 }
 
 #(11)
-#My arbitary cumulative rate change function for assessing 'significant' turns
-#x = x = heading (0 to 360 degrees), thresh = threhold of turn angle, s = time period turn has to occur in
+#My arbitrary cumulative rate change of heading function for assessing 'significant' turns
+#x = heading (0 to 360 degrees), thresh = threshold of turn angle, s = time period turn has to occur in
 cumsum_with_reset <- function(x, thresh, s){
   cumsum.left = rep(0, length(x)) 
   cumsum.right = rep(0, length(x))
@@ -387,3 +388,35 @@ cumsum_with_reset <- function(x, thresh, s){
   d<-as.data.frame(cbind(heading, cumsum.left, cumsum.right, Turn.reached))
   colnames(d)<-c("Rounded yaw (°)", "Left turn", "Right turn", "Turn point")
   return(d)} #i.e. a<-cumsum_with_reset(df$`Yaw (°)`, 30, 400)
+
+
+
+#(12)
+#Assign anti-cardinal directions column based on heading ('Mag.heading')
+df$Cardinal_direction<-ifelse(df$Mag.heading >= 337.5 | df$Mag.heading < 22.5, 'N', ifelse(df$Mag.heading >= 22.5 & df$Mag.heading < 67.5, 'NE',ifelse(df$Mag.heading >= 67.5 & df$Mag.heading < 112.5, 'E', ifelse(df$Mag.heading >= 112.5 & df$Mag.heading < 157.5, 'SE', ifelse(df$Mag.heading >= 157.5 & df$Mag.heading < 202.5, 'S', ifelse(df$Mag.heading >= 202.5 & df$Mag.heading < 247.5, 'SW', ifelse(df$Mag.heading >= 247.5 & df$Mag.heading < 292.5, 'W','NW')))))))
+
+
+#(13)
+#Rolling differential (rate of change) resetting each group, e.g., 'ID'
+library(zoo)
+df<- df %>% group_by(ID) %>% mutate(diff.depth = na.fill(diff(zoo(Smth.Press), 5, na.pad = TRUE), fill = NA)) #Stepping range for differential = 5 events
+
+
+#(14)
+#Calculate rolling gradient (slope) with data.table
+library(data.table)
+rollingSlope.lm.fit <- function(vector) {
+  a <- coef(.lm.fit(cbind(1, seq(vector)), vector))[2]
+  return(a)
+}
+df<-as.data.table(df)
+df<-na.omit(df)
+df[, ':=' (Slope.lm.fit = rollapply(y, width=80, FUN=rollingSlope.lm.fit, fill=NA))]
+
+
+#(15)
+#Calculate rolling rate change of heading column (applied over each group; 'ID') and apply logical expression so rate change never exceeds 180 / -180 degrees
+df<-df %>% group_by(ID) %>% mutate("Diff.head" = c(NA,diff(Heading))) 
+df$diff.head<-ifelse(df$diff.head < -180, (df$diff.head +360), df$diff.head)   
+df$diff.head<-ifelse(df$diff.head > 180, (df$diff.head -360), df$diff.head)       
+df$diff.head<-abs(df$diff.head) #Make values absolute
