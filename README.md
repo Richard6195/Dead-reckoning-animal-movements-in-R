@@ -8,5 +8,9 @@ R functions to dead-reckon reckon animal movement from raw motion sensor data (s
 #Gundog.Tracks = Verified Position Correction (VPC) dead-reckoning script.
 
 #Step by step guide of using Gundog.Tracks (incl. Gundog.Compass operations) - to use in conjunction with supplied raw data of a penguin walking to the sea.
+
+#Additional R script containing various operations and functions for assessing estimates of fine-scale movements.
+
+For bugs, queries and suggestions, free to email the corresponding author; richard.m.g@hotmil.com
 	
 
