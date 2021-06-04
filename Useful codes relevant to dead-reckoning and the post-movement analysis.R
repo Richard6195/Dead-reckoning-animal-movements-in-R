@@ -420,3 +420,18 @@ df<-df %>% group_by(ID) %>% mutate("Diff.head" = c(NA,diff(Heading)))
 df$diff.head<-ifelse(df$diff.head < -180, (df$diff.head +360), df$diff.head)   
 df$diff.head<-ifelse(df$diff.head > 180, (df$diff.head -360), df$diff.head)       
 df$diff.head<-abs(df$diff.head) #Make values absolute
+
+#(16)
+#Calculate circular mean (with a given smoothing window) with Interpolation between NA values if required 
+library(zoo)
+Circ.Avg.interp = function(x){  
+  H.East = sin(x * pi / 180)
+  H.North = cos(x * pi / 180)
+  H.East = na.approx(H.East, rule = 2)
+  H.North = na.approx(H.North, rule = 2)
+  H.East = mean(H.East) ; H.North = mean(H.North)                                
+  MH = (atan2(H.East, H.North)) * 180/pi                                     
+  MH = (360 + MH) %% 360
+  return(MH)                                
+}                                               
+df$smooth.heading.interp<-rollapply(df$Heading, width=10, FUN=Circ.Avg.interp, fill='extend')
