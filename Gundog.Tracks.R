@@ -1076,7 +1076,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
   
     
     ###########VP summaries###########
-    df$VP.loni = c(df[-c(1:dist.step), 'VP.longitude'], rep(0, dist.step)) ; VP.lati = c(df[-c(1:dist.step), 'VP.latitude'], rep(0, dist.step)) #Shift column values forward by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length of column)
+    df$VP.loni = c(df[-c(1:dist.step), 'VP.longitude'], rep(0, dist.step)) ; df$VP.lati = c(df[-c(1:dist.step), 'VP.latitude'], rep(0, dist.step)) #Shift column values forward by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length of column)
     df$VP.distance.2D = disty(df$VP.longitude, df$VP.latitude, 0, df$VP.loni, df$VP.lati, 0)      #Calculate row-wise distance between successive VP coordinates (according to stepping range)
     df$VP.distance.2D = c(rep(0, dist.step), df$VP.distance.2D[c(1:(nrow(df)-dist.step))]) #Shift values back by by the specified stepping range
     df$VP.cumulative.distance.2D = df$VP.distance
