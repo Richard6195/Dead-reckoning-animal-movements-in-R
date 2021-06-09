@@ -91,7 +91,7 @@ df.sub = subset(df, df$Total.Event.no. >= 1237489 & df$Total.Event.no. <= 145252
 penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = df.sub$VeDBA.sm, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1.5, c = 0, ME = df.sub$Marked.event, lo = -63.86774, la = -42.08654, VP.lon = df.sub$GPS.Longitude, VP.lat = df.sub$GPS.Latitude, VP.ME = TRUE, method = "distance", thresh = 12, dist.step = 5, bound = TRUE, Outgoing = TRUE, plot = TRUE)
 
 #Now just as an investigatory stage, lets redo the mag calibration procedure with method = 3, to see how much better (or worse) the track becomes (relative to VPs)
-df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 1, plot=TRUE)
+df.corr = Gundog.Compass(mag.x = -df$Mag_z.sm, mag.y = -df$Mag_y.sm, mag.z = -df$Mag_x.sm, acc.x = df$Acc_z.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_x.sm, ME = df$Marked.event, pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 3, plot=TRUE)
 df[, c('Pitch', 'Roll', 'Yaw')] = df.corr[, c('Pitch', 'Roll', 'Yaw')] #Update these values with the new ones from recalculated df.corr
 df.sub = subset(df, df$Total.Event.no. >= 1237489 & df$Total.Event.no. <= 1452525) #Subset this updated df
 penguin.track = Gundog.Tracks(TS = df.sub$timestamp, h = df.sub$Yaw, v = df.sub$VeDBA.sm, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1.5, c = 0, ME = df.sub$Marked.event, lo = -63.86774, la = -42.08654, VP.lon = df.sub$GPS.Longitude, VP.lat = df.sub$GPS.Latitude, VP.ME = TRUE, method = "distance", thresh = 12, dist.step = 5, bound = TRUE, Outgoing = TRUE, plot = TRUE)
