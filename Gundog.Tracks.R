@@ -69,6 +69,8 @@
 
 #User can opt for standard dead-reckoning (no VPC) by leaving 'VP.lat', 'VP.lon' and 'method' fields blank in the function input (default is NULL), bound and method parameters within the function will also be ignored.
 
+#max.speed = Speed values (m/s) are capped at this threshold if supplied (default = NULL) pre current integration and/or VPC
+
 #If plot = TRUE, with VPC, a summary of plots showing relationship between DR track and VP track, with error estimates are displayed for:
 #2 levels of VPC (1) No VPC (pre and post current integration if supplied) and (2) The level of VPC you stated in your thresh (and method)
 #Uncorrected and corrected DR tracks also plotted
