@@ -12,5 +12,7 @@ R functions to dead-reckon reckon animal movement from raw motion sensor data (s
 #Additional R script containing various operations and functions for assessing estimates of fine-scale movements.
 
 For bugs, queries and suggestions, free to email the corresponding author; richard.m.g@hotmil.com
+
+#Important to note that any loaded packages that mask operations within the 'dplyr' or 'zoo' packages can cuse error within these function. I specifically note to not have the 'imputeTS' or 'plyr' packages loaded!
 	
 
