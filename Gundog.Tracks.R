@@ -94,7 +94,7 @@
 ################################################################################################################################################################################################################################################################################
 ################################################################################################################################################################################################################################################################################
 
-Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1, c = 0, ME = 1, lo = 0, la = 0, VP.lon = NULL, VP.lat = NULL, VP.ME = FALSE, method = NULL, thresh = 1, dist.step = 1, bound = TRUE, Outgoing = TRUE, plot = FALSE) {               
+Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 1, c = 0, ME = 1, lo = 0, la = 0, VP.lon = NULL, VP.lat = NULL, VP.ME = FALSE, method = NULL, thresh = 1, dist.step = 1, bound = TRUE, Outgoing = TRUE, max.speed = NULL, plot = FALSE) {               
   
  
   if (!require('zoo')){ install.packages('zoo')} ; library('zoo') #Required packages
@@ -250,6 +250,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     
     TD = c(0, difftime(TS, lag(TS), units = "secs")[-1]) #Calculate frequency (Hz) of data (time difference (s) between rows)
     s = (v * m) + c ; s = ifelse(s < 0, 0, s) #Speed estimation using proportionality coefficient (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' (cap at 0 in case intercept drives negative values) 
+    if(is.null(max.speed) == FALSE){s = ifelse(s > max.speed, max.speed, s) } #If maximum speed threshold is supplied, cap speed values at the max.speed value
     q = (s * TD) / 6378137 #Speed estimation multiplied by time between rows for distance. q = Speed coefficient incorporating radius of earth (distance/R (R = approx. 6378137 m)) 
     if(is.null(p) == FALSE) { q = q * cos(p) } #If pitch supplied, multiply radial distance by pitch (assume direction of animal movement coincides with the direction of its longitudinal axis) 
     q = ifelse(ME == 0, 0, q) #If Marked events = 0, distance coefficient becomes 0 m (since animal deemed not moving)
@@ -354,6 +355,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     h.rev = ifelse(h.rev < 0, h.rev + 360, h.rev)             #heading is circular so need to ensure subtracting 180 does not result in negative numbers
     if(is.null(cs) == FALSE | is.null(ch) == FALSE) { ch.rev = ch.rev - 180 ; ch.rev = ifelse(ch.rev < 0, ch.rev + 360, ch.rev) } #Same applies if current heading supplied
     s.rev = (v.rev * m.rev) + c.rev ; s.rev = ifelse(s.rev < 0, 0, s.rev) #Speed estimation using proportionality coefficient (m) and constant (c) --> Equally seen as regression 'gradient' and 'intercept' (cap at 0 in case intercept drives negative values) 
+    if(is.null(max.speed) == FALSE){s.rev = ifelse(s.rev > max.speed, max.speed, s.rev) } #If maximum speed threshold is supplied, cap speed values at the max.speed value
     q.rev = (s.rev * TD.rev) / 6378137 #Speed estimation multiplied by the time between rows for distance. q = distance coefficient incorporating radius of earth (distance/R (R = approx. 6378137 m)) 
     if(is.null(p) == FALSE) { q.rev = q.rev * cos(p.rev) } #If pitch supplied, multiply radial distance by pitch (assume direction of animal movement coincides with the direction of its longitudinal axis)   
     q.rev = ifelse(ME.rev == 0, 0, q.rev) #If Marked events = 0, distance coefficient becomes 0 m (since animal deemed not moving) 
@@ -1332,11 +1334,8 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
 #####################################################################################################################################################################################################################################
 #####################################################################################################################################################################################################################################
 #####################################################################################################################################################################################################################################
-#For example:
-#a = Gundog.Tracks(TS = df$timestamp, h = df$Mag.heading.smoothed, v = df$VeDBA.smoothed, m = df$coefficient, c = 0, ME = df$Walking, lo = head(df$VP.longitude[df$VP.longitude!=0], 1), la = head(df$VP.latitude[df$VP.latitude!=0], 1), VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, thresh = 60, method = "time", Outgoing = TRUE, bound = TRUE, plot= TRUE)
-#b = Gundog.Tracks(TS = df$timestamp, h = df$Mag.heading.smoothed, v = df$VeDBA.smoothed, m = 1.5, c = 0, ME = 1, lo = -63.86662, la = -42.08646, VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, thresh=10, method="distance", Outgoing = FALSE, bound = FALSE, DBA = FALSE, plot= FALSE)
-#c = Gundog.Tracks(TS = df$Timestamp, h = df$Mag.heading.smoothed, v = df$Speed, elv = df$Depth, cs = df$Current.speed, ch = df$Current.heading, m = 1, c = 0, ME = df$Marked.events, lo = tail(df$VP.longitude[df$VP.longitude!=0], 1), la = tail(df$VP.latitude[df$VP.latitude!=0], 1), VP.lat = df$VP.latitude, VP.lon = df$VP.longitude, method="all", thresh = 1, Outgoing = FALSE, bound = FALSE, plot = TRUE)
 ##############################################################################################################################################################
+
 #Order of data frame output if VPC is initialized, (*Present according to input)
 ##############################################################################################################################################################
 # 1) Row.number
@@ -1393,4 +1392,5 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
 ###############################################
 #Original DR 'pseudo' track only
 
-
+#Example for outgoing trip on land
+#x = Gundog.Tracks(TS = df$Timestamp, h = df$Mag.heading.smoothed, v = df$VeDBA.smoothed, p = NULL, cs = NULL, ch = NULL, m = 3, c = 0, ME = df$Walking, lo =  head(df$GPS.Longitude[df$GPS.Longitude != 0],1), la = head(df$GPS.Latitude[df$GPS.Latitude != 0], 1), VP.lon = df$GPS.Longitude, VP.lat = df$GPS.Latitude, VP.ME = TRUE, dist.step = 5, method = "time", thresh = 500, bound = TRUE,  Outgoing = TRUE, max.speed = 3, plot = TRUE)
