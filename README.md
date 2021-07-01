@@ -13,6 +13,6 @@ R functions to dead-reckon reckon animal movement from raw motion sensor data (s
 
 For bugs, queries and suggestions, free to email the corresponding author; richard.m.g@hotmail.com
 
-#Important to note that any loaded packages that mask operations within the 'dplyr' or 'zoo' packages can cuse error within these function. I specifically note to not have the 'imputeTS' or 'plyr' packages loaded!
+#Important to note that any loaded packages that mask operations within the 'dplyr' or 'zoo' packages can cause error within these function. I specifically note to not have the 'imputeTS' or 'plyr' packages loaded!
 	
 
