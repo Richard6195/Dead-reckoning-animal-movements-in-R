@@ -226,10 +226,10 @@ Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z, ME, pitch.of
     df$YawSinAngle = sin(yaw.offset * pi/180)                                                                                                     
     df$YawCosAngle = cos(yaw.offset * pi/180)                                                                                                    
     df$NGbx =  df$NGx * df$YawCosAngle * df$PitchCosAngle + df$NGy * (df$YawCosAngle * df$PitchSinAngle * df$RollSinAngle - df$YawSinAngle * df$RollCosAngle) + df$NGz * (df$YawCosAngle * df$PitchSinAngle * df$RollCosAngle + df$YawSinAngle * df$RollSinAngle)
-    df$NGby =  df$NGx * df$YawSinAngle * df$PitchCosAngle + df$NGy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NGz * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle - df$YawCosAngle * df$RollSinAngle)
+    df$NGby =  df$NGx * df$YawSinAngle * df$PitchCosAngle + df$NGy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NGz * (df$YawSinAngle * df$PitchSinAngle * df$RollCosAngle - df$YawCosAngle * df$RollSinAngle)
     df$NGbz =  -df$NGx * df$PitchSinAngle  +  df$NGy * df$PitchCosAngle * df$RollSinAngle +  df$NGz * df$PitchCosAngle * df$RollCosAngle
     df$NMbx =  df$NMx * df$YawCosAngle * df$PitchCosAngle + df$NMy * (df$YawCosAngle * df$PitchSinAngle * df$RollSinAngle - df$YawSinAngle * df$RollCosAngle) + df$NMz * (df$YawCosAngle * df$PitchSinAngle * df$RollCosAngle + df$YawSinAngle * df$RollSinAngle)
-    df$NMby =  df$NMx * df$YawSinAngle * df$PitchCosAngle + df$NMy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NMz * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle - df$YawCosAngle * df$RollSinAngle)
+    df$NMby =  df$NMx * df$YawSinAngle * df$PitchCosAngle + df$NMy * (df$YawSinAngle * df$PitchSinAngle * df$RollSinAngle + df$YawCosAngle * df$RollCosAngle) +  df$NMz * (df$YawSinAngle * df$PitchSinAngle * df$RollCosAngle - df$YawCosAngle * df$RollSinAngle)
     df$NMbz =  -df$NMx * df$PitchSinAngle  +  df$NMy * df$PitchCosAngle * df$RollSinAngle +  df$NMz * df$PitchCosAngle * df$RollCosAngle
     
     df$RollSinAngle = NULL ; df$RollCosAngle = NULL
@@ -268,7 +268,7 @@ Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z, ME, pitch.of
   df$Yaw = atan2(-df$NMbfy, df$NMbfx) * 180/pi
   df$Yaw = ifelse(df$Yaw < 0, df$Yaw + 360, df$Yaw) #yaw = 0 deg to +360deg
 
-  df = df[, c(17:19, 8:10, 20:22, 30:32, 7, 27,24, 33)] #Reorder columns / remove uneccary inputs
+  df = df[, c(17:19, 8:10, 20:22, 30:32, 7, 27,24, 33)] #Reorder columns / remove unnecessary inputs
   
   return(df)
   
