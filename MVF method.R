@@ -1,5 +1,5 @@
 #Example process of the MVF protocol
-#This script is modeled around a lion Daily Diary (DD) motion sensor data set (10 Hz) and a technosmart (GiPSy-5) GPS dataset (1 Hz)
+#This script is modeled around one lion Daily Diary (DD) motion sensor data set (exported at 10 Hz) and a technosmart (GiPSy-5) GPS dataset (1 Hz)
 
 #Required libraries for data manipulation
 install.packages("zoo") ; install.packages("dplyr") ; install.packages("lubridate") 
@@ -12,14 +12,14 @@ library(ggforce) ; library(tidyverse) ; library(ggplot2)
 #################################################The thresholds#####################################################################################################################################
 #The various values used to compute MVF - these values are user-defined, changed according to the species in question. For more information, see the below code where they are implemented
 
-s = 20 #Smoothing window for computing static acceleration and post-smoothing VeDBA (~ 2 s because data = 10 Hz) - The post-smoothing value can obviously be different to that used to derive static acceleration
-dist.step = 5 #Steeping interval to compute Haversine distance between - Here we use five fix stepping interval = ~ 5 s (assuming no missing fixes) when computing distance between GPS fixes
+s = 20 #Smoothing window for computing static acceleration and post-smoothing VeDBA (~ 2 s because data = 10 Hz) - The post-smoothing value can obviously be different to that used to derive static acceleration though here they are the same
+dist.step = 5 #Stepping interval to compute Haversine distance between - Here we use five fix stepping interval = ~ 5 s (assuming no missing fixes) when computing distance between GPS fixes
 flex.1 = 3 #A degree of optional flexibility - This is used to both interpolate between speed values if maximum gap between fixes is <= than 3 s here. Any values converted from NA to an interpolated value assumes that a fix was indeed taken (so passes first stage of MVF protocol)
-speed.sm = 5 #the smoothing window for GPS-derived speed (s)
+speed.sm = 5 #the smoothing window used for GPS-derived speed (s)
 MeFF = 60 #The median rolling filter to pass over the longitude and latitude coordinates prior to deriving the Z threshold
-Z = 100 #Z threshold for filtering out extreme outliers
-X = 0.11 #The DBA (VeDBA) threshold
-Y = 0.35 #The GPS~derived speed threshold
+Z = 100 #Z threshold (units in m) for filtering out extreme outliers
+X = 0.11 #The DBA (VeDBA) threshold (units in g)
+Y = 0.35 #The GPS~derived speed threshold (units in m/s)
 flex.2 = 2  #Another degree of optional flexibility - Potential MVF periods encoded as 1 (that surpassed the above thresholds) occurring <= 2 s (flex.2) from one another (separated by MVF values of zero) are merged prior to the T threshold. But only if GPS fix was present (though see flex.1) and the Z threshold passed the MVF protocol (e.g., < 100 m here)
 T = 5 #Time threshold (T) - the uninterrupted (consecutive) time (s) that 'potential' MVF values of 1 must be present for, for a period to be classified as genuine travelling movement
 
@@ -29,15 +29,15 @@ setwd("D:/Dropbox/MVF.method/Example") #Change as appropriate to set working dir
 #Here, the motion sensor data is composed of multiple .txt files (name ending with '.txt'), with these 2 lines of code we bind them all into one data frame (termed 'df')
 temp = list.files(pattern="*.txt") 
 df = do.call(rbind,lapply(temp, function(x) read.delim(x, stringsAsFactors = T, header=T))) 
-#Now to ensure the data is in the correct order, I arrange based on a column termed 'Total.Event.no.', though this could be any column or multiple columns, e.g., containing month, day, time etc.)
+#Now to ensure the data is in the correct order, we arrange based on a column termed 'Total.Event.no.', though this could be any column or multiple columns, e.g., containing month, day, time etc.)
 df<-arrange(df, Total.Event.no.)
-df$X = NULL #Remove this column that is filled with NA values
+df$X = NULL #Remove this column, as this was just filled with NA values
 
-#(2) Create timestamp object and subset data frame based on a start and end timestamp reading
+#(2) Create time stamp object and subset data frame based on a start and end time stamp reading
 df$timestamp = paste(df$Date, df$Time.hh.mm.ss.ddd)
 options(digits.secs = 3) #Ensure 3 digits shown for infra-second times
 df$timestamp<-as.POSIXct(strptime(df$timestamp, format= "%d/%m/%Y %H:%M:%OS"), tz = "GMT")
-head(df$timestamp)[1] ; tail(df$timestamp)[6]
+head(df$timestamp, n = 1) ; tail(df$timestamp, n = 1) #See what the dtart and end times are
 #Arbitrary example, subset 5 days of data
 date1 <- as.POSIXct("2019-02-26 08:00:00.000") 
 date2 <- as.POSIXct("2019-03-03 08:00:00.000")
@@ -56,9 +56,9 @@ df$VeDBA.sm = rollapply(df$VeDBA, width = s, FUN=mean, align="center", fill="ext
 
 #################################################COMPUTE GPS-derived speed#########################################################################################################################
 #(5) load in GPS data (here only 1 file) and term data frame; 'L1.GPS'
-L1.GPS <- read.delim("D:/Dropbox/MVF.method/Example/L1.csv") #Change as appropriate
+L1.GPS <- read.delim("D:/Dropbox/MVF.method/Example/L1.GPS.csv") #Change directory path as appropriate
 
-#(6) Create timestamp object and subset data frame based on a start and end timestamp reading
+#(6) Create time stamp object and subset data frame based on a start and end time stamp reading
 L1.GPS$timestamp = paste(L1.GPS$Date, L1.GPS$Time)
 L1.GPS$timestamp <- as.POSIXct(strptime(L1.GPS$timestamp, format= "%d/%m/%Y %H:%M:%OS"), tz = "GMT")
 #Subset to same time period as the motion sensor df
@@ -77,7 +77,7 @@ disty = function(long1, lat1, long2, lat2) { #longitude and latitude supplied in
   return(d1)
 }
 
-#(8) Specify the stepping range you want between consecutive fixes to compute distance. To short of an interval for high res GPS data sets (e.g., 1 Hz), may incorporate precision error. To big of an interval may miss out genuine movement
+#(8) Specify the stepping range you want between consecutive fixes to compute distance. Too short of an interval for high res GPS data sets (e.g., 1 Hz), may incorporate precision error. Too big of an interval may miss out the tortuoisty involved in genuine movement
 L1.GPS$GPS.loni = c(L1.GPS[-c(1:dist.step), 'location.long'], rep(0, dist.step)) ; L1.GPS$GPS.lati = c(L1.GPS[-c(1:dist.step), 'location.lat'], rep(0, dist.step)) #Shift column values forward by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length of column)
 L1.GPS$GPS.distance = disty(L1.GPS$location.long, L1.GPS$location.lat, L1.GPS$GPS.loni, L1.GPS$GPS.lati)      #Calculate row-wise distance between successive GPS coordinates (according to stepping range)
 L1.GPS$GPS.distance = c(rep(0, dist.step), L1.GPS$GPS.distance[c(1:(nrow(L1.GPS)-dist.step))]) #Shift values back by by the specified stepping range
@@ -94,12 +94,13 @@ L1.GPS$GPS.speed[1:dist.step] = 0 #Make the first 'x' number of rows (length of 
 
 #################################################Merge motion sensor and GPS data together##########################################################################################################
 #(11) Merge the relevant columns of the GPS data frame with the motion sensor one.
-df = merge(df, L1.GPS[, c('timestamp', 'location.long', 'location.lat', 'GPS.distance', 'TD', 'GPS.speed')], by = 'timestamp', all = TRUE)  
+df = merge(df, L1.GPS[, c('timestamp', 'location.long', 'location.lat', 'GPS.distance', 'TD', 'GPS.speed')], by = 'timestamp', all = TRUE) 
+#Time stamps of DD (or any IMU data) and GPS at times when fixes were present need to match exactly for following analysis to work
 
 #(12) Because we have many motion sensor data values between GPS data values, we want to specify two things;
-#(i) Are GPS related NA values due to the standard inter-fix (1 s) intervals (between second values, e.g., motion sensor timestamps not ending in '.000'), or
+#(i) Are GPS related NA values due to the standard inter-fix (1 s) intervals (between second values, e.g., motion sensor time stamps not ending in '.000'), or
 #(ii) Are GPS related NA values due to missing location data where fix success rate dropped out - for greater than 1 s in this case.
-df$index.sec = df$timestamp - round_date(df$timestamp, unit="1 seconds") #(i) Subtracting the infra-second timestamp with a rounded version (no decimal seconds) will read a difference of exactly zero at the location of each 'whole second'. #Notably variations of this 'index' computation may be needed if GPS was set at different logging rate (e.g., 2 Hz)
+df$index.sec = df$timestamp - round_date(df$timestamp, unit="1 seconds") #(i) Subtracting the infra-second time stamps with a rounded version (no decimal seconds) will read a difference of exactly zero at the location of each 'whole second'. #Notably variations of this 'index' computation may be needed if GPS was set at different logging rate (e.g., 2 Hz)
 df$index.sec = ifelse(df$index.sec == 0, 1, 0) #(i) Values of one code for 'whole seconds' (where GPS is meant to be present) and values of zero code for infra-second periods
 df$GPS.fix.present = ifelse(is.na(df$location.long) == TRUE, 0, 1) #(ii) Values of one code for the GPS fix being present (on the second mark) and values of zero code for no fixes  
 
@@ -121,7 +122,7 @@ df$thresh.consid = ifelse(is.na(df$GPS.speed.interp.sm) == TRUE, 0, 1) #Values o
 #By applying a rolling median using a suitable window length, large distance estimates reflecting either a single or multiple 'batched' outlier(s) can be distinguished from fixes deemed 'accurate' but highly separated 
 #in space due to large gaps in locational data. The window length size and Z threshold should be chosen according to the animal in question due to the scales of movement undertaken by different species 
 #median filter window length (MeFF) of 60 s and a lenient threshold of 100 m used for lions. 
-df$Lon.approx = na.approx(df$location.long, rule = 2) #First linearly interpolate between NA's -ensure first observation is not an NA (row one))
+df$Lon.approx = na.approx(df$location.long, rule = 2) #First linearly interpolate between NA's - ensure first observation is not an NA (row one))
 df$Lat.approx = na.approx(df$location.lat, rule = 2)
 df$Med.lon = rollapply(df$Lon.approx, width = MeFF, align = 'center', fill = "extend", FUN=median) # 60 s used here
 df$Med.lat = rollapply(df$Lat.approx, width = MeFF, align = 'center', fill = "extend", FUN=median)
@@ -198,3 +199,17 @@ plot(df.sub$VeDBA.sm, type = "l", col = "blue", ylab = "VeDBA (g)")
 plot(df.sub$MVF[1:500], col=factor(df.sub$MVF), ylab = "MVF")
 plot(df.sub$GPS.speed.interp.sm[1:500], type = "l", col = "red", ylab = "GPS-speed (m/s)")
 plot(df.sub$VeDBA.sm[1:500], type = "l", col = "blue", ylab = "VeDBA (g)")
+
+
+
+
+############################################################END##########################################################################################################
+
+
+
+
+
+
+
+
+
