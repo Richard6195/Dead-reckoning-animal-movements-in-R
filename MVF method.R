@@ -95,7 +95,7 @@ L1.GPS$GPS.speed[1:dist.step] = 0 #Make the first 'x' number of rows (length of 
 #################################################Merge motion sensor and GPS data together##########################################################################################################
 #(11) Merge the relevant columns of the GPS data frame with the motion sensor one.
 df = merge(df, L1.GPS[, c('timestamp', 'location.long', 'location.lat', 'GPS.distance', 'TD', 'GPS.speed')], by = 'timestamp', all = TRUE) 
-#Time stamps of DD (or any IMU data) and GPS at times when fixes were present need to match exactly for following analysis to work
+#Ensure Time stamps of DD (or any IMU data) and GPS at times when fixes were present match exactly
 
 #(12) Because we have many motion sensor data values between GPS data values, we want to specify two things;
 #(i) Are GPS related NA values due to the standard inter-fix (1 s) intervals (between second values, e.g., motion sensor time stamps not ending in '.000'), or
@@ -130,7 +130,8 @@ df$dist.thresh = disty(df$Lon.approx, df$Lat.approx, df$Med.lon, df$Med.lat)
 df$Z.thresh = ifelse(df$dist.thresh < Z, 1, 0) #Values of one mean that we pass step two of MVF protocol                                
 
 #Investigatory plots
-plot(df$dist.thresh, type = "l") #Gives an idea of thresh to use (this thresh could indeed probably be lower than 100)
+par(mfrow=c(1,1))
+plot(df$dist.thresh, type = "l") ; abline(h=100, col="red", lty=2) #Gives an idea of thresh to use (this thresh could indeed probably be lower than 100)
 sub = subset(df, df$Z.thresh == 0)
 df %>% 
   ggplot(aes(x = Lon.approx, y = Lat.approx,  color= factor(Z.thresh)))+
