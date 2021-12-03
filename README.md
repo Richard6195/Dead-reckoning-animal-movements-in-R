@@ -1,5 +1,5 @@
-# Gundog.Dead-reckoning in R (DOI: 10.1186/s40317-021-00245-z)
-R functions to dead-reckon reckon animal movement from raw motion sensor data (specifically, the tilt-compensated compass approach using tri-axial accelerometers & magnetometers) with option to correct for drift with Verified Positions (VPs - e.g., GPS). 
+# Gundog.Dead-reckoning in R 
+R functions to dead-reckon reckon animal movement from raw motion sensor data (specifically, the tilt-compensated compass approach using tri-axial accelerometers & magnetometers) with option to correct for drift with Verified Positions (VPs - e.g., GPS). (See DOI: 10.1186/s40317-021-00245-z for main paper detailling the below 'Gundog.R' scripts)
 
 #Gundog.Peaks = a peak finder (local maxima) in a data series.
 
