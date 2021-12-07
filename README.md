@@ -1,5 +1,5 @@
-# Gundog.Dead-reckoning in R
-R functions to dead-reckon reckon animal movement from raw motion sensor data (specifically, the tilt-compensated compass approach using tri-axial accelerometers & magnetometers) with option to correct for drift with Verified Positions (VPs - e.g., GPS). 
+# Gundog.Dead-reckoning in R 
+R functions to dead-reckon reckon animal movement from raw motion sensor data (specifically, the tilt-compensated compass approach using tri-axial accelerometers & magnetometers) with option to correct for drift with Verified Positions (VPs - e.g., GPS). (See DOI: 10.1186/s40317-021-00245-z for main paper detailling the below 'Gundog.R' scripts)
 
 #Gundog.Peaks = a peak finder (local maxima) in a data series.
 
@@ -7,7 +7,7 @@ R functions to dead-reckon reckon animal movement from raw motion sensor data (s
 
 #Gundog.Tracks = Verified Position Correction (VPC) dead-reckoning script.
 
-#Step by step guide of using Gundog.Tracks (incl. Gundog.Compass operations) - to use in conjunction with supplied raw data of a penguin walking to the sea.
+#Step by step guide of using Gundog.Tracks (incl. Gundog.Compass operations) - to use in conjunction with supplied raw data of a penguin walking to the sea (zipped).
 
 #Additional R script containing various operations and functions for assessing estimates of fine-scale movements.
 
@@ -17,4 +17,5 @@ For bugs, queries and suggestions, free to email the corresponding author; richa
 
 #Important to note that any loaded packages that mask operations within the 'dplyr' or 'zoo' packages can cause error within these function. I specifically note to not have the 'imputeTS' or 'plyr' packages loaded!
 	
-
+# MVF method in R
+#MVF method = A Movement Verified Filtering (MVF) protocol to aid in classifying geunine travelling movement and identify GPS error within high-res GPS data sets. Here is an example workflow of the MVF method which primarily involves deriving DBA from tri-axial accelerometery data, computing speed from GPS data, and evaluating how both covary during travelling movement. The user then decides on the threshold limits that DBA and GPS speed must exceed (both in terms of magnitude and duration) for a movement bout to be verified. This script is modelled to use in conjunction with supplied raw data files of a lion (zipped).
