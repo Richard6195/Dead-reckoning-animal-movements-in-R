@@ -18,6 +18,7 @@ Gundog.Peaks = function(TS, x, thresh = 0, LoM = 5, constant = "med", ME = 1, pl
   if(plot == TRUE & Sys.info()["sysname"] == "Windows") { windows(width=10, height=7) } #Set graphics window if plot = TRUE (and operating system is windows)
   is.POSIXct = function(x) inherits(x, "POSIXct") #Function to check variable is of POSIXct type
   if (!require('zoo')){ install.packages('zoo')} ; library('zoo') #Requires the 'zoo' package
+  if (!require('dplyr')){ install.packages('dplyr')} ; library('dplyr') #Requires the 'dplyr' package
   #Ensure Timestamp is correct format
   if(is.POSIXct(TS) == FALSE) { #Ensure TS is of type POSIXct (otherwise terminate function)
     stop("The function stops - TS must be of type POSIXct.")
