@@ -142,8 +142,8 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       stop("The function stops - Initial ch or cs value is missing (NA)")
     }
     
-    cs = na.locf(cs)             #Na's replaced with most recent non-NA value (observations carried forwards)
-    ch = na.locf(ch)             #Na's replaced with most recent non-NA value (observations carried forwards)
+    cs = zoo::na.locf(cs)             #Na's replaced with most recent non-NA value (observations carried forwards)
+    ch = zoo::na.locf(ch)             #Na's replaced with most recent non-NA value (observations carried forwards)
     xx = rep(NA, length(cs))      #Empty vector, will contain uncorrected DR longitude coordinates prior to adding current vectors (for comparison purposes)
     yy = rep(NA, length(cs))      #Empty vector, will contain uncorrected DR latitude coordinates prior to adding current vectors (for comparison purposes)
   }
@@ -772,7 +772,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     temp.df$VP.thresh = rep("Warning, Inf values occured. Scale of VPC altered", nrow(temp.df)) #User is informed the thresh set may no longer be valid
     df = ref.df #Replace the 'main' df with the default reference (ref.df) version prior to the original VP columns specifying what fixes to use in the VPC process (since this has now altered) 
     df = merge(df, temp.df[, c('Row.number', 'Number.of.VPCs', 'VP.used.to.correct', 'VP.thresh')], by.x = "Row.number", by.y = "Row.number", all = TRUE) #Merge initial 'main' data frame (df) with the various new outputs within temp.df, specifying when to VP correct - following removal of Inf values. Merge via the 'Row.number' column
-    df$Number.of.VPCs = na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards) 
+    df$Number.of.VPCs = zoo::na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards) 
 
     print(paste("Iterations of VPC rate successfully rescaled - VPC dead-reckoning procedure next - Stage 3 complete"))
     
@@ -797,11 +797,11 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     df = merge(df, temp.df[, c('Row.number', 'Dist.corr.factor', 'Head.corr.factor')], by.x = "Row.number", by.y = "Row.number", all = TRUE) #Merge the 'main' df with the calculated correction factors from the temp.df, via the Row.number column
     temp.df =  temp.df[, c('Row.number', 'Number.of.VPCs', 'VP.used.to.correct', 'VP.thresh')] #Subset to only include relevant columns, which becomes apparent as the reference for VPs used in DR correcting procedure when further Inf checks may be required (because more than one round of VPC adjustment may be necessary for dead-reckoning fixes to accord exactly with ground-truthed locations)
     
-    df$Dist.corr.factor = na.locf(df$Dist.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards) 
-    df$Head.corr.factor = na.locf(df$Head.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards)
+    df$Dist.corr.factor = zoo::na.locf(df$Dist.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards) 
+    df$Head.corr.factor = zoo::na.locf(df$Head.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards)
     df$VP.used.to.correct = ifelse(is.na(df$VP.used.to.correct) == TRUE, 0, df$VP.used.to.correct)  #Replace NA's with zero
-    df$VP.thresh = na.locf(df$VP.thresh) #Replicate thresh value with no NA's
-    df$Number.of.VPCs = na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards)
+    df$VP.thresh = zoo::na.locf(df$VP.thresh) #Replicate thresh value with no NA's
+    df$Number.of.VPCs = zoo::na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards)
     
     #The way in which correction factors were calculated (and merged back to 'main' df) means that the 'next' correction factor is always one row too early, so need to shift correction factors back by one row
     df$Dist.corr.factor = c(NA, df$Dist.corr.factor[-nrow(df)])
@@ -918,8 +918,8 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
         df$VP.longitude = VP.lon ; df$VP.latitude = VP.lat #Add VP longitude and latitude coordinates to this data frame
         df = merge(df, temp.df[, c('Row.number', 'Number.of.VPCs', 'VP.used.to.correct', 'VP.thresh')], by.x = "Row.number", by.y = "Row.number", all = TRUE) #Merge 'main' df and relevant variables of temp.df (positions of VP's used to correct), via the Row number
         df = merge(df, temp.df.2, by.x = "Row.number", by.y="Row.number", all = TRUE) #Merge 'main' df and temp.df.2 (temp.df.2 contains the correction factors), via the 'Row.number' column
-        df$Number.of.VPCs = na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards) 
-        df$VP.thresh = na.locf(df$VP.thresh) #Replace each NA with the most recent non-NA (observations carried forwards) 
+        df$Number.of.VPCs = zoo::na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards) 
+        df$VP.thresh = zoo::na.locf(df$VP.thresh) #Replace each NA with the most recent non-NA (observations carried forwards) 
         
         print(paste("Iterations of VPC rate successfully rescaled - VPC procedure continues"))
         
@@ -943,11 +943,11 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       
       df = merge(df, temp.df[, c('Row.number', 'Dist.corr.factor', 'Head.corr.factor')], by.x="Row.number", by.y="Row.number", all = TRUE) #Merge the 'main' df with the corrected correction factors from the temp.df, via the Row.number column
       temp.df = temp.df[, c('Row.number', 'Number.of.VPCs', 'VP.used.to.correct', 'VP.thresh')] #Subset relevant columns from temp.df as the reference for VPs used in DR correcting procedure
-      df$Dist.corr.factor = na.locf(df$Dist.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards) 
-      df$Head.corr.factor = na.locf(df$Head.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards)
+      df$Dist.corr.factor = zoo::na.locf(df$Dist.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards) 
+      df$Head.corr.factor = zoo::na.locf(df$Head.corr.factor) #Replace each NA with the most recent non-NA (observations carried forwards)
       df$VP.used.to.correct = ifelse(is.na(df$VP.used.to.correct) == TRUE, 0, df$VP.used.to.correct)  #Replace NA's with zero
-      df$VP.thresh = na.locf(df$VP.thresh) #Replicate thresh value with no NA's
-      df$Number.of.VPCs = na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards)
+      df$VP.thresh = zoo::na.locf(df$VP.thresh) #Replicate thresh value with no NA's
+      df$Number.of.VPCs = zoo::na.locf(df$Number.of.VPCs) #Replace each NA with the most recent non-NA (observations carried forwards)
      
       #The way in which correction factors were calculated (and merged back to 'main' df) means that the 'next' correction factor is always one row too early, so need to shift correction factors back by one row
       df$Dist.corr.factor = c(NA, df$Dist.corr.factor[-nrow(df)])
@@ -1027,10 +1027,10 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     if(Outgoing == FALSE) {
       df = df[dim(df)[1]:1,] #Final reversion of data frame if Outgoing = FALSE (back to original)
       df$Row.number = rev(df$Row.number)
-      df$VP.longitude = na.locf(df$VP.longitude, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
-      df$VP.latitude = na.locf(df$VP.latitude, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
-      df$Distance.error.before.correction = na.locf(df$Distance.error.before.correction, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
-      df$Distance.error.after.correction = na.locf(df$Distance.error.after.correction, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
+      df$VP.longitude = zoo::na.locf(df$VP.longitude, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
+      df$VP.latitude = zoo::na.locf(df$VP.latitude, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
+      df$Distance.error.before.correction = zoo::na.locf(df$Distance.error.before.correction, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
+      df$Distance.error.after.correction = zoo::na.locf(df$Distance.error.after.correction, fromLast = TRUE) #Replace each NA with the most recent non-NA (observations carried backwards)
       df$Heading.corr =  df$Heading.corr + 180 ; df$Heading.corr = ifelse(df$Heading.corr > 360, df$Heading.corr - 360, df$Heading.corr) #Revert the corrected heading (currently 180 degrees out)
       if(is.null(cs) == FALSE | is.null(ch) == FALSE) { #If currents supplied....
       df$Heading.current.integrated = df$Heading.current.integrated + 180 ; df$Heading.current.integrated = ifelse(df$Heading.current.integrated > 360, df$Heading.current.integrated - 360, df$Heading.current.integrated) #Revert the current integrated heading (pre-correction) (currently 180 degrees out)
@@ -1038,10 +1038,10 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     }
     
     if(Outgoing == TRUE) {
-      df$VP.longitude = na.locf(df$VP.longitude) #Replace each NA with the most recent non-NA (observations carried forwards) 
-      df$VP.latitude = na.locf(df$VP.latitude) #Replace each NA with the most recent non-NA (observations carried forwards)
-      df$Distance.error.before.correction = na.locf(df$Distance.error.before.correction) #Replace each NA with the most recent non-NA (observations carried forwards) 
-      df$Distance.error.after.correction = na.locf(df$Distance.error.after.correction) #Replace each NA with the most recent non-NA (observations carried forwards) 
+      df$VP.longitude = zoo::na.locf(df$VP.longitude) #Replace each NA with the most recent non-NA (observations carried forwards) 
+      df$VP.latitude = zoo::na.locf(df$VP.latitude) #Replace each NA with the most recent non-NA (observations carried forwards)
+      df$Distance.error.before.correction = zoo::na.locf(df$Distance.error.before.correction) #Replace each NA with the most recent non-NA (observations carried forwards) 
+      df$Distance.error.after.correction = zoo::na.locf(df$Distance.error.after.correction) #Replace each NA with the most recent non-NA (observations carried forwards) 
     }
     
     ###########DR summaries###########
