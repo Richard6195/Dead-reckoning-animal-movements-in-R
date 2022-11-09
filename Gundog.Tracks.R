@@ -668,7 +668,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
     if(method == "distance") {
       #First calculate cumulative distance between VPs
       VP.longitude = VP.ref.df$VP.longitude ; VP.latitude = VP.ref.df$VP.latitude #Retrieve VP longitude and latitude coordinates as vectors from the data frame 'VP.ref.df'
-      VP.loni = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) ; VP.lati = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) #Shift vector values forward  by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length as original)
+      VP.loni = c(VP.longitude[-c(1:dist.step)], rep(NA, dist.step)) ; VP.lati = c(VP.latitude[-c(1:dist.step)], rep(NA, dist.step)) #Shift vector values forward  by the specified stepping range and add relevant number of NA's  to the end (to maintain vector length as original)
       VP.distance = disty(VP.longitude, VP.latitude, 0, VP.loni, VP.lati, 0)      #Calculate row wise distance between successive VP coordinates
       VP.distance = c(rep(NA, dist.step), VP.distance[c(1:(length(VP.distance)-dist.step))]) #Shift values back by by the specified stepping range
       VP.distance = ifelse(is.na(VP.distance == TRUE), 0, VP.distance)  #Replace NA's with 0's
