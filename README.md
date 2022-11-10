@@ -22,3 +22,5 @@ For bugs, queries and suggestions, free to email the corresponding author; richa
 
 # Gundog.GPS.Filter 
 #Gundog.GPS.Filter = An R function to screen for GPS anomalies, including pre-processing burst data, and combining user-defined movement thresholds (with features to account for temporal discrepancies between fixes), with Isolation forest models as a comparative method of unsupervised anomaly detection interactive summary plots are made for users to inspect the output.
+
+All relevant information of function inputs and outputs are detailed within the various R scripts
