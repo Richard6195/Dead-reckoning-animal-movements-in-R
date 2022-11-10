@@ -60,10 +60,10 @@
 #Max.speed --> Threshold value (m/s) for R3 
 #Speed.step --> The stepping range between fixes for 'Max.speed' calculation (e.g., if default value of 1 is changed to 5, then speed is computed between every 5 fixes per group number)
 #I.F_conf = --> Quantile anomaly score (default = 0.995)
-#Plot --> If set to TRUE (default), then the following plots are given: 
+#plot --> If set to TRUE (default), then the following plots are given: 
 
-#Plot 1 = 'Thresholds' --> Four histograms showing the density distributions of metrics used in evaluating R1, R2 & R3 thresholds. Dashed ablines denote the 95 (green) and 99 (red) percentile, relative to the user-defined threshold values (blue)
-#Plot 2 = 'Plot' --> Two side-by-side ggplotly interactive plots of GPS track:
+#plot 1 = 'Thresholds' --> Four histograms showing the density distributions of metrics used in evaluating R1, R2 & R3 thresholds. Dashed ablines denote the 95 (green) and 99 (red) percentile, relative to the user-defined threshold values (blue)
+#plot 2 = 'Plot' --> Two side-by-side ggplotly interactive plots of GPS track:
         #[left plot] coloured according to whether fix was determined 'Not anomalous' (no thresholds surpassed), 'Possible outlier' (one or two of R1, R2 & R3 were surpassed), or 'Unanimous outlier' (all thresholds surpassed) --> Based on component 1 user-defined thresholds
         #[right plot] coloured according to whether fix was determined 'Not anomalous' 'Possible outlier' or 'Unanimous outlier' --> Based on component 2 user-defined thresholds Isolation forest models. If quantile anomaly scores from all  metrics considered together are above the 'I.F_conf value', then fix considered 'Unanimous outlier', for single dimensional cases; 'Possible outlier'. Otherwise, 'Not anomalous'.
 
@@ -95,13 +95,13 @@
 #I.F_anomaly_score_R3 --> Isolation Forest anomaly score just considering single case of R3
 #Verdict_IF --> 'Not anomalous' (anomaly scores, both in single cases, and multidimensional case of R1, R2, and R3, are less than the input quantile ('I.F_conf' - default = 0.995) of there respective distributions), 'Possible outlier' (One or a combination of  R1, R2, or R3 anomaly scores are equal to or greater than the input quantile ('I.F_conf' - default = 0.995) of there respective distributions), 'Unanimous outlier' (the distribution of anomaly scores at or higher than the input quantile ('I.F_conf' - default = 0.995) when considered as the multidimensional case [R1, R2, & R3 considered together]
 
-##Based on the verdicts within the returned data frame (and plots, if Plot = TRUE), the user can then decide to filter out the necessary fixes. The 'observation' column is given, if ever resultant columns are required to be merged back into the 'original' df (based on matching row numbers)
+##Based on the verdicts within the returned data frame (and plots, if plot = TRUE), the user can then decide to filter out the necessary fixes. The 'observation' column is given, if ever resultant columns are required to be merged back into the 'original' df (based on matching row numbers)
 
 #############################################Gundog.GPS.Filter#############################################
 
 ###START OF FUNCTION###
 
-Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.length = 10, Burst.method = "last", Dist.thresh = 50, Max.speed = 1, Speed.step = 1, Angle.speed = 1, Angle.thresh = 30, I.F_conf = 0.995, Plot = TRUE){
+Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.length = 10, Burst.method = "last", Dist.thresh = 50, Max.speed = 1, Speed.step = 1, Angle.speed = 1, Angle.thresh = 30, I.F_conf = 0.995, plot = TRUE){
   
   ################################################################################################################################################  
   
@@ -404,7 +404,7 @@ Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.len
   
   ###Plot results###
   
-  if(Plot == TRUE){
+  if(plot == TRUE){
     
     #summary plots - 'Thresholds'
     old.par <- par(mar = c(0, 0, 0, 0))
@@ -682,7 +682,7 @@ Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.len
 #END OF FUNCTION
 
 #For example.... (assuming original GPS data set is called 'Drogon')
-#df.sub = Gundog.GPS.Filter(TS = Drogon$study.local.timestamp, Longitude = Drogon$location.long, Latitude = Drogon$location.lat, Drop.out = 300, Window.length = 10, Burst.method = "median", Dist.thresh = 50, Max.speed = 0.85, Speed.step = 1, Angle.speed = 0.85, Angle.thresh = 30, Plot = TRUE, I.F_conf = 0.995)
+#df.sub = Gundog.GPS.Filter(TS = Drogon$study.local.timestamp, Longitude = Drogon$location.long, Latitude = Drogon$location.lat, Drop.out = 300, Window.length = 10, Burst.method = "median", Dist.thresh = 50, Max.speed = 0.85, Speed.step = 1, Angle.speed = 0.85, Angle.thresh = 30, plot = TRUE, I.F_conf = 0.995)
 
 #And to recover the data frame from the returned list...
 #GPS.df = df.sub[["df"]]
