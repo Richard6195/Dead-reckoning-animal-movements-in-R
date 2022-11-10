@@ -6,6 +6,9 @@
 ##########################################################################################################################################
 #+eval=FALSE 
 
+#Required packages installed: rgl
+
+########################
 #Required inputs:
 
 #Raw tri-axial magnetometer data (mag.x,y,z)
