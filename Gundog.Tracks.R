@@ -95,7 +95,7 @@
 #Note, the speed of this function will increase if the user pre-sorts VP data to be used for correction and chooses method = 'all'.
 #Lastly within the function a threshold of 0.01 m difference between VPs and corresponding corrected DR positions exists. To achieve this level of accuracy, repeats of the correction process may occur. User can find this value within the function and change to larger number if desired.
 
-#Required functions: 'zoo' and 'dplyr'. Preferably detach 'imputeTS' and 'plyr' packages prior to using this function. If interactive.plot = TRUE, then 'ggplot2' and 'plotly' packages are also required.
+#Required packages: 'zoo' and 'dplyr'. Preferably detach 'imputeTS' and 'plyr' packages prior to using this function. If interactive.plot = TRUE, then 'ggplot2' and 'plotly' packages are also required.
 
 ################################################################################################################################################################################################################################################################################
 ################################################################################################################################################################################################################################################################################
@@ -123,7 +123,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
   options(warn = -1) #Remove warnings()
   options(digits.secs = 3) #Specify the number of decimal places of the fractional seconds to show if relevant   
   is.POSIXct = function(x) inherits(x, "POSIXct") #Function to check variable is of POSIXct type
-  #options(digits = 16) #Visual numerical precision reference
+  options(digits = 7) #Visual numerical precision reference
   
   ##############################################################################################################################################################################################################################################################################
   #1) Prepare input vectors
@@ -1369,7 +1369,8 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
             axis.title.x = element_text(color = "black", size = 16),
             axis.title.y = element_text(color = "black", size = 16),
             plot.title = element_text(hjust = 0.5),
-            legend.position = "none") 
+            legend.position = "none")+
+      geom_point(aes(x = VP.longitude, y = VP.latitude), alpha = 0.8, size = 0.4, color = "purple")
     fig <- ggplotly(p1)
     print(fig)
     #Make Marked events numeric again
