@@ -1434,13 +1434,14 @@ Gundog.Compass = function(mag.x, mag.y, mag.z, acc.x, acc.y, acc.z,
     df$Yaw = atan2(2*(df$q.y * df$q.z + df$q.w * df$q.x), df$q.w^2 - df$q.x^2 - df$q.y^2 + df$q.z^2)*180/pi
     df$Yaw = ifelse(df$Yaw < 0, df$Yaw + 360, df$Yaw) #yaw = 0 deg to +360deg
     
-    if(method > 0){ df = df[, c(17:19, 8:10, 20:22, 7, 23:26, 28, 27, 29)] #Reorder columns / remove unnecessary inputs
-    }else{ df = df[, c('q.w', 'q.x', 'q.y', 'q.z', 'Pitch', 'Roll', 'Yaw')] }
+   # if(method > 0){ df = df[, c('acc.x', 'acc.y', 'acc.z', 17:19, 8:10, 20:22, 7, 23:26, 28, 27, 29)] #Reorder columns / remove unnecessary inputs
+    #}else{ df = df[, c('acc.x', 'acc.y', 'acc.z', 'q.w', 'q.x', 'q.y', 'q.z', 'Pitch', 'Roll', 'Yaw')] }
   }      
   
   return(df)
   
 }
+
 
 #E.g_1 --> df.corr = Gundog.Compass(mag.x = df$Mag_x.sm, mag.y = df$Mag_y.sm, mag.z = df$Mag_z.sm, acc.x = df$Acc_x.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_z.sm, ME = df$Marked.event, acc.ref.frame = "NWU", positive.g = "up", mag.ref.frame = "NWU", pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 3, algorithm = "standard", plot = TRUE)
 #E.g_2 --> df.corr = Gundog.Compass(mag.x = df$Mag_x.sm, mag.y = df$Mag_y.sm, mag.z = df$Mag_z.sm, acc.x = df$Acc_x.sm, acc.y = df$Acc_y.sm, acc.z = df$Acc_z.sm, ME = df$Marked.event, acc.ref.frame = "ENU", positive.g = "up", mag.ref.frame = "ENU", pitch.offset = 0, roll.offset = 0, yaw.offset = 0, method = 0, algorithm = "SAAM", plot = TRUE)

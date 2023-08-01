@@ -231,6 +231,7 @@ Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.len
   #Remove duplicated processed GPS fixes per burst
   if(Burst.method != "none"){
     df.sub = df[!duplicated(df$Fix.number), ]
+    df.sub = df.sub %>% mutate(Time.diff = as.numeric(c(0, difftime(Timestamp, dplyr::lag(Timestamp), units = "secs")[-1]))) %>% ungroup() #Redo time difference between rows after subset
   }else{ 
     df.sub = df
   }
@@ -674,10 +675,10 @@ Gundog.GPS.Filter = function(TS, Longitude, Latitude, Drop.out = 300, Window.len
     fig <- fig %>%layout(annotations = annotations) 
     print(fig)
     return(list(Thresholds = Thresholds, Plot = fig, df = as.data.frame(df.sub)))
+    par(mfrow = c(1,1)) #Return plotting parameters back
   }else{ return(df = as.data.frame(df.sub))
   } #If no plotting, just return the data frame
 }
-
 
 #END OF FUNCTION
 

@@ -733,7 +733,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       #Paste resulting vectors with suitable column names to data frame entitled 'VP.ref.df'
       VP.ref.df$Number.of.VPCs = keep 
       VP.ref.df$VP.used.to.correct = fix ; VP.ref.df$VP.used.to.correct[1] = 1 #Ensure first VP is used as the first VPC coordinates
-      VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] = ifelse(VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] == 0,  (VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] + 1), VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)]) #Ensure the number of VPCs is updated if last row originally was not going to be used in VPC operation (always ensure last row is included, regardless of thresh)
+      VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] = ifelse(VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] == 0,  (z + 1), VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)]) #Ensure the number of VPCs is updated if last row originally was not going to be used in VPC operation (always ensure last row is included, regardless of thresh)
       VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] = 1 #Ensure last VP is used within the VPC operation
     }
     
@@ -812,7 +812,7 @@ Gundog.Tracks = function(TS, h, v, elv = 0, p = NULL, cs = NULL, ch = NULL, m = 
       #Paste resulting vectors with suitable column names to data frame entitled 'VP.ref.df'
       VP.ref.df$Number.of.VPCs = keep 
       VP.ref.df$VP.used.to.correct = fix ; VP.ref.df$VP.used.to.correct[1] = 1 #Ensure first VP is used as the first VPC coordinates
-      VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] = ifelse(VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] == 0,  (VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] + 1), VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)]) #Ensure the number of VPCs is updated if last row originally was not going to be used in VPC operation (always ensure last row is included, regardless of thresh)
+      VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)] = ifelse(VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] == 0,  (z + 1), VP.ref.df$Number.of.VPCs[nrow(VP.ref.df)]) #Ensure the number of VPCs is updated if last row originally was not going to be used in VPC operation (always ensure last row is included, regardless of thresh)
       VP.ref.df$VP.used.to.correct[nrow(VP.ref.df)] = 1 #Ensure last VP is used within the VPC operation
     }
     
